@@ -35,6 +35,27 @@ class MeterDetailsScreen extends StatelessWidget {
                 icon: const Icon(LucideIcons.camera),
                 onPressed: () => context.push('/meters/${meter.id}/scan'),
               ),
+              PopupMenuButton<String>(
+                onSelected: (val) {
+                  if (val == 'delete') {
+                    _confirmDeleteMeter(context, store, meter);
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(LucideIcons.trash2, color: AppTheme.danger, size: 18),
+                        SizedBox(width: 10),
+                        Text('Delete Meter',
+                            style: TextStyle(
+                                color: AppTheme.danger, fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
           body: ListView(
@@ -58,11 +79,12 @@ class MeterDetailsScreen extends StatelessWidget {
                 const SizedBox(height: 12),
                 _buildAnalyticsChart(context, stats),
                 const SizedBox(height: 24),
-                const Text('History',
+                const Text('Reading History',
                     style:
                         TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 12),
                 ...readings.map((r) => _buildReadingTile(context, r)),
+                const SizedBox(height: 24),
               ] else ...[
                 const Center(
                   child: Padding(
@@ -297,6 +319,35 @@ class MeterDetailsScreen extends StatelessWidget {
         subtitle: Text('Reading: ${r.currentReading}'),
         trailing: Text(r.billingMonth,
             style: const TextStyle(color: AppTheme.textSecondary)),
+      ),
+    );
+  }
+
+  void _confirmDeleteMeter(
+      BuildContext context, WattWiseStore store, Meter meter) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete Meter?'),
+        content: Text(
+            'Are you sure you want to delete "${meter.nickname}"? All associated readings and bill records will be permanently removed.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.danger),
+            onPressed: () {
+              store.deleteMeter(meter.id);
+              Navigator.of(dialogContext).pop();
+              if (context.mounted) {
+                context.pop();
+              }
+            },
+            child: const Text('Delete'),
+          ),
+        ],
       ),
     );
   }

@@ -14,6 +14,7 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _notificationsEnabled = true;
+  bool _popupBannersEnabled = true;
   bool _protectedTariff = false;
   String _selectedProvider = 'LESCO';
 
@@ -78,7 +79,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     },
                   ),
                 ),
-                const Divider(height: 1, indent: 16, endIndent: 16),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          _buildSectionHeader('Notifications & Banners'),
+          const SizedBox(height: 8),
+          Card(
+            child: Column(
+              children: [
                 SwitchListTile(
                   secondary: Container(
                     padding: const EdgeInsets.all(8),
@@ -93,6 +102,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   subtitle: const Text('Receive alerts before cycle ends'),
                   value: _notificationsEnabled,
                   onChanged: (val) => setState(() => _notificationsEnabled = val),
+                ),
+                const Divider(height: 1, indent: 16, endIndent: 16),
+                SwitchListTile(
+                  secondary: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.accent.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(LucideIcons.messageSquare, color: AppTheme.accent),
+                  ),
+                  title: const Text('Pop-up Banners',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  subtitle: const Text('Floating in-app pop-up notifications'),
+                  value: _popupBannersEnabled,
+                  onChanged: (val) => setState(() => _popupBannersEnabled = val),
                 ),
               ],
             ),
@@ -150,48 +175,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 24),
-          _buildSectionHeader('About WattWise'),
-          const SizedBox(height: 8),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primary,
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: const Icon(LucideIcons.zap, color: Colors.white, size: 28),
-                      ),
-                      const SizedBox(width: 16),
-                      const Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('WattWise',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 18)),
-                          SizedBox(height: 2),
-                          Text('Version 1.0.0 (Build 2026)',
-                              style: TextStyle(
-                                  color: AppTheme.textSecondary, fontSize: 13)),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Smart Electricity Meter Tracking & Meter Reading OCR Assistant built for Pakistani DISCO consumers.',
-                    style: TextStyle(color: AppTheme.textSecondary, fontSize: 13, height: 1.4),
-                  ),
-                ],
+          const SizedBox(height: 40),
+          Center(
+            child: Text(
+              'WattWise v1.0.0 • Smart Electricity Meter Assistant',
+              style: TextStyle(
+                fontSize: 12,
+                color: AppTheme.textSecondary.withOpacity(0.7),
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),
+          const SizedBox(height: 20),
         ],
       ),
     );
