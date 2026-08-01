@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:provider/provider.dart';
-import '../models/wattwise_types.dart';
 import '../services/wattwise_billing.dart';
 import '../store/wattwise_store.dart';
 import '../theme/app_theme.dart';
@@ -73,7 +72,9 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
 
   Future<void> _captureAndRead() async {
     final controller = _cameraController;
-    if (controller == null || !controller.value.isInitialized || _isProcessing) {
+    if (controller == null ||
+        !controller.value.isInitialized ||
+        _isProcessing) {
       return;
     }
     try {
@@ -99,18 +100,6 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
     await _readImage(image);
   }
 
-  Future<void> _takePhotoFromPicker() async {
-    if (_isProcessing) return;
-    final image = await _imagePicker.pickImage(
-      source: ImageSource.camera,
-      maxWidth: 2200,
-      maxHeight: 2200,
-      imageQuality: 95,
-    );
-    if (image == null) return;
-    await _readImage(image);
-  }
-
   Future<void> _readImage(XFile image) async {
     if (!mounted) return;
     setState(() => _isProcessing = true);
@@ -125,7 +114,8 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
       final reading = _extractReading(recognized, baseline);
       if (!mounted) return;
       if (reading == null) {
-        _showError('OCR could not find a safe meter reading. You can enter it manually.');
+        _showError(
+            'OCR could not find a safe meter reading. You can enter it manually.');
         await _showManualEntry();
       } else {
         _showConfirmationDialog(reading);
@@ -155,7 +145,9 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () {
               final value = int.tryParse(controller.text.trim());
@@ -191,30 +183,38 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('Check the OCR result and correct it if needed.', style: TextStyle(color: AppTheme.textSecondary)),
+              const Text('Check the OCR result and correct it if needed.',
+                  style: TextStyle(color: AppTheme.textSecondary)),
               const SizedBox(height: 16),
               TextFormField(
                 initialValue: current.toString(),
                 keyboardType: TextInputType.number,
                 maxLength: 9,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                 onChanged: (value) {
                   final parsed = int.tryParse(value);
-                  if (parsed != null && parsed <= 999999999) setDialogState(() => current = parsed);
+                  if (parsed != null && parsed <= 999999999)
+                    setDialogState(() => current = parsed);
                 },
-                decoration: const InputDecoration(labelText: 'Current whole-unit reading', counterText: ''),
+                decoration: const InputDecoration(
+                    labelText: 'Current whole-unit reading', counterText: ''),
               ),
               const SizedBox(height: 12),
-              Text('Official bill present reading: $previous', style: const TextStyle(color: AppTheme.textSecondary)),
+              Text('Official bill present reading: $previous',
+                  style: const TextStyle(color: AppTheme.textSecondary)),
               if (current >= previous) ...[
                 const SizedBox(height: 4),
-                Text('${current - previous} units used since the bill', style: const TextStyle(fontWeight: FontWeight.w600)),
+                Text('${current - previous} units used since the bill',
+                    style: const TextStyle(fontWeight: FontWeight.w600)),
               ],
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
+            TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('Cancel')),
             ElevatedButton(
               onPressed: current < previous
                   ? null
@@ -263,7 +263,8 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
     }).toList();
     if (safe.isEmpty) return null;
     safe.sort((a, b) {
-      if (baseline == null) return b.toString().length.compareTo(a.toString().length);
+      if (baseline == null)
+        return b.toString().length.compareTo(a.toString().length);
       return (a - baseline).compareTo(b - baseline);
     });
     return safe.first;
@@ -271,7 +272,8 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
 
   void _showError(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -289,7 +291,9 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
           const SizedBox(height: 12),
           _buildActions(cameraReady),
           const SizedBox(height: 12),
-          const Text('Place only the number window inside the guide. OCR ignores decimal digits on digital meters.', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+          const Text(
+              'Place only the number window inside the guide. OCR ignores decimal digits on digital meters.',
+              style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
         ],
       ),
     );
@@ -298,8 +302,14 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
   Widget _buildModeSelector() {
     return SegmentedButton<MeterDisplayType>(
       segments: const [
-        ButtonSegment(value: MeterDisplayType.digital, label: Text('Digital'), icon: Icon(LucideIcons.scanText)),
-        ButtonSegment(value: MeterDisplayType.rolling, label: Text('Rolling'), icon: Icon(LucideIcons.gauge)),
+        ButtonSegment(
+            value: MeterDisplayType.digital,
+            label: Text('Digital'),
+            icon: Icon(LucideIcons.scanLine)),
+        ButtonSegment(
+            value: MeterDisplayType.rolling,
+            label: Text('Rolling'),
+            icon: Icon(LucideIcons.gauge)),
       ],
       selected: {_displayType},
       onSelectionChanged: (value) => setState(() => _displayType = value.first),
@@ -314,10 +324,42 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            if (cameraReady) CameraPreview(_cameraController!) else Container(color: AppTheme.primary, child: Center(child: Text(_cameraError ?? 'Starting camera...', style: const TextStyle(color: Colors.white)))),
+            if (cameraReady)
+              CameraPreview(_cameraController!)
+            else
+              Container(
+                  color: AppTheme.primary,
+                  child: Center(
+                      child: Text(_cameraError ?? 'Starting camera...',
+                          style: const TextStyle(color: Colors.white)))),
             IgnorePointer(child: CustomPaint(painter: _GuidePainter())),
-            Center(child: Container(width: double.infinity, height: 124, margin: const EdgeInsets.symmetric(horizontal: 28), decoration: BoxDecoration(border: Border.all(color: AppTheme.accent, width: 3), borderRadius: BorderRadius.circular(14)), child: Align(alignment: Alignment.bottomCenter, child: Padding(padding: const EdgeInsets.all(8), child: Text(_displayType == MeterDisplayType.digital ? 'Digital number window' : 'Rolling number wheels', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600))))),
-            if (_isProcessing) const Center(child: CircularProgressIndicator(color: Colors.white)),
+            Center(
+              child: Container(
+                width: double.infinity,
+                height: 124,
+                margin: const EdgeInsets.symmetric(horizontal: 28),
+                decoration: BoxDecoration(
+                  border: Border.all(color: AppTheme.accent, width: 3),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Text(
+                      _displayType == MeterDisplayType.digital
+                          ? 'Digital number window'
+                          : 'Rolling number wheels',
+                      style: const TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            if (_isProcessing)
+              const Center(
+                  child: CircularProgressIndicator(color: Colors.white)),
           ],
         ),
       ),
@@ -327,11 +369,26 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
   Widget _buildActions(bool cameraReady) {
     return Row(
       children: [
-        Expanded(child: _ActionButton(icon: LucideIcons.camera, label: 'Capture', enabled: cameraReady && !_isProcessing, onPressed: _captureAndRead)),
+        Expanded(
+            child: _ActionButton(
+                icon: LucideIcons.camera,
+                label: 'Capture',
+                enabled: cameraReady && !_isProcessing,
+                onPressed: _captureAndRead)),
         const SizedBox(width: 8),
-        Expanded(child: _ActionButton(icon: LucideIcons.image, label: 'Upload', enabled: !_isProcessing, onPressed: _pickImage)),
+        Expanded(
+            child: _ActionButton(
+                icon: LucideIcons.image,
+                label: 'Upload',
+                enabled: !_isProcessing,
+                onPressed: _pickImage)),
         const SizedBox(width: 8),
-        Expanded(child: _ActionButton(icon: LucideIcons.pencilLine, label: 'Type', enabled: !_isProcessing, onPressed: _showManualEntry)),
+        Expanded(
+            child: _ActionButton(
+                icon: LucideIcons.pencil,
+                label: 'Type',
+                enabled: !_isProcessing,
+                onPressed: _showManualEntry)),
       ],
     );
   }
@@ -343,11 +400,18 @@ class _ActionButton extends StatelessWidget {
   final bool enabled;
   final VoidCallback onPressed;
 
-  const _ActionButton({required this.icon, required this.label, required this.enabled, required this.onPressed});
+  const _ActionButton(
+      {required this.icon,
+      required this.label,
+      required this.enabled,
+      required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
-    return OutlinedButton.icon(onPressed: enabled ? onPressed : null, icon: Icon(icon, size: 17), label: Text(label));
+    return OutlinedButton.icon(
+        onPressed: enabled ? onPressed : null,
+        icon: Icon(icon, size: 17),
+        label: Text(label));
   }
 }
 
@@ -355,8 +419,16 @@ class _GuidePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..color = Colors.black.withOpacity(0.42);
-    final guide = Rect.fromLTWH(28, (size.height - 124) / 2, size.width - 56, 124);
-    canvas.drawPath(Path.combine(PathOperation.difference, Path()..addRect(Offset.zero & size), Path()..addRRect(RRect.fromRectAndRadius(guide, const Radius.circular(14)))), paint);
+    final guide =
+        Rect.fromLTWH(28, (size.height - 124) / 2, size.width - 56, 124);
+    canvas.drawPath(
+        Path.combine(
+            PathOperation.difference,
+            Path()..addRect(Offset.zero & size),
+            Path()
+              ..addRRect(
+                  RRect.fromRectAndRadius(guide, const Radius.circular(14)))),
+        paint);
   }
 
   @override
@@ -364,6 +436,7 @@ class _GuidePainter extends CustomPainter {
 }
 
 String _cameraMessage(CameraException error) {
-  if (error.code == 'CameraAccessDenied') return 'Camera permission was denied. Upload a photo or type the reading.';
+  if (error.code == 'CameraAccessDenied')
+    return 'Camera permission was denied. Upload a photo or type the reading.';
   return 'Camera is unavailable. Upload a photo or type the reading.';
 }

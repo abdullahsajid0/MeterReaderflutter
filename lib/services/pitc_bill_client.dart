@@ -51,17 +51,33 @@ Future<BillInfo> fetchPitcBill(
     form['searchTextBox'] = cleanReference;
     form['ruCodeTextBox'] = '';
     form['btnSearch'] = 'Search';
-    final response = await client
-        .post(
-          uri,
-          headers: {
-            ...headers,
-            'Referer': uri.toString(),
-            'Content-Type': 'application/x-www-form-urlencoded'
-          },
-          body: form,
-        )
-        .timeout(const Duration(seconds: 20));
+    final initialCookies = _cookieHeader(initial.headers);
+    final request = http.Request('POST', uri)
+      ..followRedirects = false
+      ..headers.addAll({
+        ...headers,
+        'Referer': uri.toString(),
+        'Cookie': initialCookies,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      })
+      ..bodyFields = form;
+    var response = await http.Response.fromStream(
+      await client.send(request).timeout(const Duration(seconds: 20)),
+    );
+    if (response.statusCode >= 300 && response.statusCode < 400) {
+      final location = response.headers['location'];
+      if (location == null) {
+        throw Exception('$company did not return a bill location');
+      }
+      final resultUri = uri.resolve(location);
+      final cookies =
+          _mergeCookies(initialCookies, _cookieHeader(response.headers));
+      response = await client.get(resultUri, headers: {
+        ...headers,
+        'Referer': uri.toString(),
+        'Cookie': cookies,
+      }).timeout(const Duration(seconds: 20));
+    }
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('$company bill lookup returned ${response.statusCode}');
     }
@@ -96,6 +112,26 @@ Future<BillInfo> fetchPitcBill(
   } finally {
     client.close();
   }
+}
+
+String _cookieHeader(Map<String, String> headers) {
+  final raw = headers['set-cookie'] ?? '';
+  return raw
+      .split(RegExp(r',(?=\s*[^;,]+=)'))
+      .map((cookie) => cookie.split(';').first.trim())
+      .where((cookie) => cookie.contains('='))
+      .join('; ');
+}
+
+String _mergeCookies(String first, String second) {
+  final values = <String, String>{};
+  for (final cookie in '$first; $second'.split(';')) {
+    final parts = cookie.trim().split('=');
+    if (parts.length >= 2) {
+      values[parts.first] = '${parts.first}=${parts.sublist(1).join('=')}';
+    }
+  }
+  return values.values.join('; ');
 }
 
 Map<String, String> _hiddenFields(String source) {
