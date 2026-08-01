@@ -140,7 +140,7 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
             'OCR could not find a safe meter reading. You can enter it manually.');
         await _showManualEntry();
       } else {
-        _showConfirmationDialog(reading);
+        await _showConfirmationDialog(reading);
       }
     } catch (error) {
       _showError('OCR could not process this image: $error');
@@ -157,16 +157,16 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
   }
 
   Future<void> _showManualEntry() async {
-    final controller = TextEditingController();
+    String inputValue = '';
     final reading = await showDialog<int>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Enter meter reading'),
         content: TextField(
-          controller: controller,
           autofocus: true,
           keyboardType: TextInputType.number,
           maxLength: 9,
+          onChanged: (val) => inputValue = val,
           decoration: const InputDecoration(
             labelText: 'Whole units only',
             hintText: 'e.g. 42234',
@@ -183,7 +183,7 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
               child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () {
-              final value = int.tryParse(controller.text.trim());
+              final value = int.tryParse(inputValue.trim());
               if (value == null || value < 0 || value > 999999999) return;
               if (dialogContext.mounted) {
                 Navigator.of(dialogContext).pop(value);
@@ -194,11 +194,13 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
         ],
       ),
     );
-    controller.dispose();
-    if (reading != null && mounted) _showConfirmationDialog(reading);
+
+    if (reading != null && mounted) {
+      await _showConfirmationDialog(reading);
+    }
   }
 
-  void _showConfirmationDialog(int reading) {
+  Future<void> _showConfirmationDialog(int reading) async {
     final store = context.read<WattWiseStore>();
     final meter = store.meters.firstWhere((m) => m.id == widget.meterId);
     final bill = store.billFor(meter.id);
@@ -209,7 +211,7 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
       return;
     }
     var current = reading;
-    showDialog<void>(
+    final saved = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => StatefulBuilder(
@@ -230,8 +232,9 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
                     const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                 onChanged: (value) {
                   final parsed = int.tryParse(value);
-                  if (parsed != null && parsed <= 999999999)
+                  if (parsed != null && parsed <= 999999999) {
                     setDialogState(() => current = parsed);
+                  }
                 },
                 decoration: const InputDecoration(
                     labelText: 'Current whole-unit reading', counterText: ''),
@@ -250,7 +253,7 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
             TextButton(
                 onPressed: () {
                   if (dialogContext.mounted) {
-                    Navigator.of(dialogContext).pop();
+                    Navigator.of(dialogContext).pop(false);
                   }
                 },
                 child: const Text('Cancel')),
@@ -269,10 +272,7 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
                         billingMonth: cycle.billingMonth,
                       );
                       if (dialogContext.mounted) {
-                        Navigator.of(dialogContext).pop();
-                      }
-                      if (context.mounted) {
-                        context.pop();
+                        Navigator.of(dialogContext).pop(true);
                       }
                     },
               child: const Text('Save scan'),
@@ -281,6 +281,10 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
         ),
       ),
     );
+
+    if (saved == true && mounted) {
+      context.pop();
+    }
   }
 
   int? _extractReading(RecognizedText text, int? baseline) {

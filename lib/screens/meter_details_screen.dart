@@ -126,16 +126,24 @@ class MeterDetailsScreen extends StatelessWidget {
       if (!context.mounted) return;
       final updateSchedule = await showDialog<bool>(
         context: context,
-        builder: (_) => AlertDialog(
+        builder: (dialogContext) => AlertDialog(
           title: const Text('Update reading schedule?'),
           content: Text(
               'The official bill was read on ${DateFormat('d MMM yyyy').format(DateTime.parse(bill.readingDate))}. Use this date for future cycles?'),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(context, false),
+                onPressed: () {
+                  if (dialogContext.mounted) {
+                    Navigator.of(dialogContext).pop(false);
+                  }
+                },
                 child: const Text('Keep current')),
             ElevatedButton(
-                onPressed: () => Navigator.pop(context, true),
+                onPressed: () {
+                  if (dialogContext.mounted) {
+                    Navigator.of(dialogContext).pop(true);
+                  }
+                },
                 child: const Text('Update schedule')),
           ],
         ),
