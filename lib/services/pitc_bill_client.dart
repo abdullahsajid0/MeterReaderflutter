@@ -23,13 +23,11 @@ Future<BillInfo> fetchPitcBill(
   String meterId = 'temp',
 }) async {
   final cleanReference = referenceNumber.replaceAll(RegExp(r'\D'), '');
-  final slug = pitcProviderSlugs[company.toUpperCase()];
+  final cleanCompany = company.trim().toUpperCase();
+  final slug = pitcProviderSlugs[cleanCompany] ?? '${cleanCompany.toLowerCase()}bill';
   if (!RegExp(r'^\d{10,14}$').hasMatch(cleanReference)) {
     throw Exception(
         'Enter the 10 to 14 digit reference number printed on the bill');
-  }
-  if (slug == null) {
-    throw Exception('This electricity provider is not supported yet');
   }
 
   final uri = Uri.parse('$pitcBaseUrl/$slug');

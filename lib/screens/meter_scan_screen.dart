@@ -322,31 +322,53 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
       final lineHasKwh = isKwhLine || upper.contains('KWH') | upper.contains('KW') || upper.contains('UNIT');
       final baseScore = lineHasKwh ? 150.0 : 30.0;
 
-      // Decimal pattern (e.g. 04223.4 kWh)
+      // Digital Meter Mode: Process decimal patterns & strip post-decimal digits
       if (_displayType == MeterDisplayType.digital) {
-        final decimalMatch = RegExp(r'(\d{3,9})\s*[.,·]\s*\d').firstMatch(cleaned.replaceAll(' ', ''));
+        // Match integer part before decimal separator (. , · :) followed by 1 or 2 decimal digits
+        final decimalMatch = RegExp(r'(\d{3,9})\s*[.,·:]\s*\d{1,2}').firstMatch(cleaned.replaceAll(' ', ''));
         if (decimalMatch != null) {
-          final integer = int.tryParse(decimalMatch.group(1)!);
-          if (integer != null) addCandidate(integer, baseScore + 60.0);
+          final integerPart = int.tryParse(decimalMatch.group(1)!);
+          if (integerPart != null) {
+            addCandidate(integerPart, baseScore + 250.0);
+          }
         }
-      }
 
-      // Continuous digits matching
-      final noSpaces = cleaned.replaceAll(RegExp(r'\s+'), '');
-      for (final match in RegExp(r'\d{3,9}').allMatches(noSpaces)) {
-        final parsed = int.tryParse(match.group(0)!);
-        if (parsed != null) {
-          final lenBonus = (parsed >= 1000 && parsed <= 999999) ? 40.0 : 10.0;
-          addCandidate(parsed, baseScore + lenBonus);
+        // Truncate decimal tail (e.g. '.6' or ',6' or '·6') so pure digit extraction only sees integer part
+        final truncated = cleaned.replaceAll(RegExp(r'[.,·:]\s*\d{1,2}'), '');
+
+        final noSpaces = truncated.replaceAll(RegExp(r'\s+'), '');
+        for (final match in RegExp(r'\d{3,9}').allMatches(noSpaces)) {
+          final parsed = int.tryParse(match.group(0)!);
+          if (parsed != null) {
+            final lenBonus = (parsed >= 1000 && parsed <= 999999) ? 40.0 : 10.0;
+            addCandidate(parsed, baseScore + lenBonus);
+          }
         }
-      }
 
-      // Pure digits extraction
-      final pureDigits = cleaned.replaceAll(RegExp(r'[^\d]'), '');
-      if (pureDigits.length >= 3 && pureDigits.length <= 9) {
-        final parsed = int.tryParse(pureDigits);
-        if (parsed != null) {
-          addCandidate(parsed, baseScore + 20.0);
+        final pureDigits = truncated.replaceAll(RegExp(r'[^\d]'), '');
+        if (pureDigits.length >= 3 && pureDigits.length <= 9) {
+          final parsed = int.tryParse(pureDigits);
+          if (parsed != null) {
+            addCandidate(parsed, baseScore + 20.0);
+          }
+        }
+      } else {
+        // Rolling Meter Mode: Standard integer matching
+        final noSpaces = cleaned.replaceAll(RegExp(r'\s+'), '');
+        for (final match in RegExp(r'\d{3,9}').allMatches(noSpaces)) {
+          final parsed = int.tryParse(match.group(0)!);
+          if (parsed != null) {
+            final lenBonus = (parsed >= 1000 && parsed <= 999999) ? 40.0 : 10.0;
+            addCandidate(parsed, baseScore + lenBonus);
+          }
+        }
+
+        final pureDigits = cleaned.replaceAll(RegExp(r'[^\d]'), '');
+        if (pureDigits.length >= 3 && pureDigits.length <= 9) {
+          final parsed = int.tryParse(pureDigits);
+          if (parsed != null) {
+            addCandidate(parsed, baseScore + 20.0);
+          }
         }
       }
     }

@@ -29,7 +29,7 @@ class _MainScreenState extends State<MainScreen> {
         title: Text(_currentIndex == 0 ? 'WattWise' : 'Insights'),
         leading: IconButton(
           icon: const Icon(LucideIcons.settings),
-          onPressed: () {},
+          onPressed: () => context.push('/settings'),
         ),
         actions: [
           Consumer<WattWiseStore>(

@@ -4,6 +4,7 @@ import 'screens/meter_details_screen.dart';
 import 'screens/meter_scan_screen.dart';
 import 'screens/add_meter_screen.dart';
 import 'screens/alerts_screen.dart';
+import 'screens/settings_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/',
@@ -15,6 +16,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/alerts',
       builder: (context, state) => const AlertsScreen(),
+    ),
+    GoRoute(
+      path: '/settings',
+      builder: (context, state) => const SettingsScreen(),
     ),
     GoRoute(
       path: '/meters/new',

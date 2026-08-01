@@ -102,28 +102,54 @@ class DashboardScreen extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: AppTheme.primary,
-                          borderRadius: BorderRadius.circular(12),
+                          gradient: const LinearGradient(
+                            colors: [AppTheme.primary, Color(0xFF334155)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.primary.withOpacity(0.2),
+                              blurRadius: 6,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
                         ),
-                        child: const Icon(LucideIcons.zap, size: 20, color: Colors.white),
+                        child: const Icon(LucideIcons.zap, size: 22, color: Colors.amberAccent),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 14),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(m.nickname,
                               style: const TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 16)),
-                          Text(m.company,
+                                  fontWeight: FontWeight.bold, fontSize: 17)),
+                          const SizedBox(height: 2),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppTheme.accent.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              m.company.toUpperCase(),
                               style: const TextStyle(
-                                  color: AppTheme.textSecondary, fontSize: 13)),
+                                  color: AppTheme.accent,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11),
+                            ),
+                          ),
                         ],
                       ),
                     ],
                   ),
                   IconButton(
+                    style: IconButton.styleFrom(
+                      backgroundColor: AppTheme.accent.withOpacity(0.1),
+                    ),
                     icon:
-                        const Icon(LucideIcons.camera, color: AppTheme.accent),
+                        const Icon(LucideIcons.camera, color: AppTheme.accent, size: 20),
                     onPressed: () => context.push('/meters/${m.id}/scan'),
                   )
                 ],
@@ -151,7 +177,8 @@ class DashboardScreen extends StatelessWidget {
                 const SizedBox(height: 8),
               ] else ...[
                 Text('$used units used this cycle',
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                const SizedBox(height: 8),
               ],
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
