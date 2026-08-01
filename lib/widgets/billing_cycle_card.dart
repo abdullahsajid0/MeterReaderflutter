@@ -109,6 +109,28 @@ class BillingCycleCard extends StatelessWidget {
                           style: const TextStyle(fontSize: 12))),
                 ],
               ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _BillMetric(
+                      label: 'Previous',
+                      value: bill!.previousReading.toString()),
+                  _BillMetric(
+                      label: 'Present', value: bill!.currentReading.toString()),
+                  _BillMetric(
+                      label: 'Units used', value: bill!.unitsBilled.toString()),
+                  if (bill!.amountPkr != null)
+                    _BillMetric(
+                        label: 'Bill amount', value: 'Rs ${bill!.amountPkr}'),
+                  if (bill!.dueDate != null)
+                    _BillMetric(
+                        label: 'Due date',
+                        value: DateFormat('d MMM')
+                            .format(DateTime.parse(bill!.dueDate!))),
+                ],
+              ),
             ],
           ],
         ),
@@ -138,6 +160,37 @@ class _Metric extends StatelessWidget {
           Text(value,
               style:
                   const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+        ],
+      ),
+    );
+  }
+}
+
+class _BillMetric extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _BillMetric({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minWidth: 100),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppTheme.background,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label,
+              style:
+                  const TextStyle(color: AppTheme.textSecondary, fontSize: 10)),
+          const SizedBox(height: 2),
+          Text(value,
+              style:
+                  const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
         ],
       ),
     );

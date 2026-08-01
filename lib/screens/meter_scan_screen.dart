@@ -1,4 +1,5 @@
 import 'package:camera/camera.dart';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:provider/provider.dart';
 import '../services/wattwise_billing.dart';
+import '../services/meter_image_cropper.dart';
 import '../store/wattwise_store.dart';
 import '../theme/app_theme.dart';
 
@@ -103,15 +105,35 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
   Future<void> _readImage(XFile image) async {
     if (!mounted) return;
     setState(() => _isProcessing = true);
+    final temporaryFiles = <File>[];
     try {
-      final recognized = await _textRecognizer.processImage(
-        InputImage.fromFilePath(image.path),
-      );
+      final bytes = await image.readAsBytes();
+      final region = _displayType == MeterDisplayType.digital
+          ? digitalMeterRegion
+          : rollingMeterRegion;
+      final croppedVariants = cropMeterImageVariants(bytes, region);
+      if (croppedVariants.isEmpty) {
+        _showError(
+            'This image could not be cropped. Please try another photo.');
+        return;
+      }
       final store = context.read<WattWiseStore>();
       final meter = store.meters.firstWhere((m) => m.id == widget.meterId);
       final baseline = store.billFor(meter.id)?.currentReading ??
           store.latestReading(meter.id)?.currentReading;
-      final reading = _extractReading(recognized, baseline);
+      final readings = <int>[];
+      for (var index = 0; index < croppedVariants.length; index++) {
+        final croppedFile = File(
+            '${Directory.systemTemp.path}/wattwise_meter_${DateTime.now().microsecondsSinceEpoch}_$index.jpg');
+        temporaryFiles.add(croppedFile);
+        await croppedFile.writeAsBytes(croppedVariants[index], flush: true);
+        final recognized = await _textRecognizer.processImage(
+          InputImage.fromFilePath(croppedFile.path),
+        );
+        final candidate = _extractReading(recognized, baseline);
+        if (candidate != null) readings.add(candidate);
+      }
+      final reading = _chooseReading(readings, baseline);
       if (!mounted) return;
       if (reading == null) {
         _showError(
@@ -123,6 +145,13 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
     } catch (error) {
       _showError('OCR could not process this image: $error');
     } finally {
+      for (final croppedFile in temporaryFiles) {
+        try {
+          await croppedFile.delete();
+        } catch (_) {
+          // Temporary OCR files are best-effort cleanup.
+        }
+      }
       if (mounted) setState(() => _isProcessing = false);
     }
   }
@@ -270,6 +299,22 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
     return safe.first;
   }
 
+  int? _chooseReading(List<int> readings, int? baseline) {
+    if (readings.isEmpty) return null;
+    final counts = <int, int>{};
+    for (final reading in readings) {
+      counts[reading] = (counts[reading] ?? 0) + 1;
+    }
+    final ranked = counts.keys.toList()
+      ..sort((a, b) {
+        final countOrder = (counts[b] ?? 0).compareTo(counts[a] ?? 0);
+        if (countOrder != 0) return countOrder;
+        if (baseline == null) return b.compareTo(a);
+        return (a - baseline).compareTo(b - baseline);
+      });
+    return ranked.first;
+  }
+
   void _showError(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
@@ -317,34 +362,40 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
   }
 
   Widget _buildPreview(bool cameraReady) {
+    final region = _displayType == MeterDisplayType.digital
+        ? digitalMeterRegion
+        : rollingMeterRegion;
     return AspectRatio(
       aspectRatio: 4 / 3,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            if (cameraReady)
-              CameraPreview(_cameraController!)
-            else
-              Container(
-                  color: AppTheme.primary,
-                  child: Center(
-                      child: Text(_cameraError ?? 'Starting camera...',
-                          style: const TextStyle(color: Colors.white)))),
-            IgnorePointer(child: CustomPaint(painter: _GuidePainter())),
-            Center(
-              child: Container(
-                width: double.infinity,
-                height: 124,
-                margin: const EdgeInsets.symmetric(horizontal: 28),
-                decoration: BoxDecoration(
-                  border: Border.all(color: AppTheme.accent, width: 3),
-                  borderRadius: BorderRadius.circular(14),
+        child: LayoutBuilder(
+          builder: (context, constraints) => Stack(
+            fit: StackFit.expand,
+            children: [
+              if (cameraReady)
+                CameraPreview(_cameraController!)
+              else
+                Container(
+                    color: AppTheme.primary,
+                    child: Center(
+                        child: Text(_cameraError ?? 'Starting camera...',
+                            style: const TextStyle(color: Colors.white)))),
+              IgnorePointer(child: CustomPaint(painter: _GuidePainter(region))),
+              Align(
+                alignment: Alignment(
+                  (region.left + region.width / 2) * 2 - 1,
+                  (region.top + region.height / 2) * 2 - 1,
                 ),
-                child: Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Padding(
+                child: FractionallySizedBox(
+                  widthFactor: region.width,
+                  heightFactor: region.height,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppTheme.accent, width: 3),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    alignment: Alignment.bottomCenter,
                     padding: const EdgeInsets.all(8),
                     child: Text(
                       _displayType == MeterDisplayType.digital
@@ -356,11 +407,11 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
                   ),
                 ),
               ),
-            ),
-            if (_isProcessing)
-              const Center(
-                  child: CircularProgressIndicator(color: Colors.white)),
-          ],
+              if (_isProcessing)
+                const Center(
+                    child: CircularProgressIndicator(color: Colors.white)),
+            ],
+          ),
         ),
       ),
     );
@@ -411,16 +462,25 @@ class _ActionButton extends StatelessWidget {
     return OutlinedButton.icon(
         onPressed: enabled ? onPressed : null,
         icon: Icon(icon, size: 17),
-        label: Text(label));
+        label: Flexible(
+          child: Text(label, maxLines: 1, softWrap: false, overflow: TextOverflow.visible),
+        ));
   }
 }
 
 class _GuidePainter extends CustomPainter {
+  final MeterCropRegion region;
+
+  _GuidePainter(this.region);
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..color = Colors.black.withOpacity(0.42);
-    final guide =
-        Rect.fromLTWH(28, (size.height - 124) / 2, size.width - 56, 124);
+    final guide = Rect.fromLTWH(
+        size.width * region.left,
+        size.height * region.top,
+        size.width * region.width,
+        size.height * region.height);
     canvas.drawPath(
         Path.combine(
             PathOperation.difference,

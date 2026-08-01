@@ -23,6 +23,7 @@ dependencies:
   uuid: ^4.3.3
   collection: ^1.18.0
   image_picker: ^1.2.3
+  image: ^4.9.1
 
 dev_dependencies:
   flutter_test:
