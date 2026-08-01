@@ -175,13 +175,19 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
+              onPressed: () {
+                if (dialogContext.mounted) {
+                  Navigator.of(dialogContext).pop();
+                }
+              },
               child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () {
               final value = int.tryParse(controller.text.trim());
               if (value == null || value < 0 || value > 999999999) return;
-              Navigator.pop(dialogContext, value);
+              if (dialogContext.mounted) {
+                Navigator.of(dialogContext).pop(value);
+              }
             },
             child: const Text('Use reading'),
           ),
@@ -242,7 +248,11 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
           ),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(dialogContext),
+                onPressed: () {
+                  if (dialogContext.mounted) {
+                    Navigator.of(dialogContext).pop();
+                  }
+                },
                 child: const Text('Cancel')),
             ElevatedButton(
               onPressed: current < previous
@@ -258,8 +268,12 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
                         unitsConsumed: current - previous,
                         billingMonth: cycle.billingMonth,
                       );
-                      Navigator.pop(dialogContext);
-                      context.pop();
+                      if (dialogContext.mounted) {
+                        Navigator.of(dialogContext).pop();
+                      }
+                      if (context.mounted) {
+                        context.pop();
+                      }
                     },
               child: const Text('Save scan'),
             ),
@@ -271,19 +285,32 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
 
   int? _extractReading(RecognizedText text, int? baseline) {
     final candidates = <int>{};
+    
+    String fullText = '';
     for (final block in text.blocks) {
       for (final line in block.lines) {
-        final value = line.text.replaceAll('O', '0').replaceAll('I', '1');
-        final decimal = RegExp(r'(\d{3,9})\s*[.,·]\s*\d').firstMatch(value);
-        if (_displayType == MeterDisplayType.digital && decimal != null) {
-          final integer = int.tryParse(decimal.group(1)!);
-          if (integer != null) candidates.add(integer);
-        }
-        for (final match in RegExp(r'\d{3,9}').allMatches(value)) {
-          final parsed = int.tryParse(match.group(0)!);
-          if (parsed != null && parsed <= 999999999) candidates.add(parsed);
-        }
+        fullText += '${line.text} ';
       }
+    }
+    
+    final value = fullText
+        .replaceAll('O', '0').replaceAll('o', '0')
+        .replaceAll('I', '1').replaceAll('i', '1').replaceAll('l', '1')
+        .replaceAll('Z', '2').replaceAll('z', '2')
+        .replaceAll('S', '5').replaceAll('s', '5')
+        .replaceAll('B', '8')
+        .replaceAll('G', '6')
+        .replaceAll(' ', '');
+
+    final decimal = RegExp(r'(\d{3,9})\s*[.,·]\s*\d').firstMatch(value);
+    if (_displayType == MeterDisplayType.digital && decimal != null) {
+      final integer = int.tryParse(decimal.group(1)!);
+      if (integer != null) candidates.add(integer);
+    }
+    
+    for (final match in RegExp(r'\d{3,9}').allMatches(value)) {
+      final parsed = int.tryParse(match.group(0)!);
+      if (parsed != null && parsed <= 999999999) candidates.add(parsed);
     }
     final safe = candidates.where((candidate) {
       if (baseline == null) return true;
