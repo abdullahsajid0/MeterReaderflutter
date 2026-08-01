@@ -37,8 +37,8 @@ Uint8List? cropMeterImage(Uint8List bytes, MeterCropRegion region) {
 List<Uint8List> cropMeterImageVariants(
     Uint8List bytes, MeterCropRegion region) {
   final variants = <Uint8List>[];
-  
-  // 1. Add original uncropped image (crucial if crop region misaligns with camera resolution)
+
+  // 1. Full uncropped image
   variants.add(bytes);
 
   final source = img.decodeImage(bytes);
@@ -46,28 +46,47 @@ List<Uint8List> cropMeterImageVariants(
     return variants;
   }
 
-  final x = (source.width * region.left).round().clamp(0, source.width - 1);
-  final y = (source.height * region.top).round().clamp(0, source.height - 1);
-  final width =
-      (source.width * region.width).round().clamp(1, source.width - x);
-  final height =
-      (source.height * region.height).round().clamp(1, source.height - y);
-  
-  final cropped =
-      img.copyCrop(source, x: x, y: y, width: width, height: height);
-  
-  // 2. Clean cropped original
-  variants.add(Uint8List.fromList(img.encodeJpg(cropped, quality: 96)));
+  // Helper to crop & process
+  void addCroppedVariant(img.Image image, String label) {
+    variants.add(Uint8List.fromList(img.encodeJpg(image, quality: 95)));
+    
+    // Resize 2x for OCR detail
+    final resized = img.copyResize(image, width: image.width * 2);
+    variants.add(Uint8List.fromList(img.encodeJpg(resized, quality: 95)));
 
-  // 3. Enlarged cropped
-  final enlarged = img.copyResize(cropped, width: cropped.width * 2);
-  variants.add(Uint8List.fromList(img.encodeJpg(enlarged, quality: 96)));
+    // Grayscale + High Contrast
+    final gray = img.grayscale(resized);
+    final highContrast = img.adjustColor(gray, contrast: 1.6, brightness: 1.05);
+    variants.add(Uint8List.fromList(img.encodeJpg(highContrast, quality: 95)));
 
-  // 4. High contrast grayscale
-  final grayscale = img.grayscale(enlarged);
-  final highContrast =
-      img.adjustColor(grayscale, contrast: 1.5, brightness: 1.05);
-  variants.add(Uint8List.fromList(img.encodeJpg(highContrast, quality: 96)));
+    // Inverted colors (White text on dark background - ideal for mechanical rolling wheels & LCDs)
+    final inverted = img.invert(highContrast);
+    variants.add(Uint8List.fromList(img.encodeJpg(inverted, quality: 95)));
+  }
+
+  // Variant A: Standard specified region crop
+  final xA = (source.width * region.left).round().clamp(0, source.width - 1);
+  final yA = (source.height * region.top).round().clamp(0, source.height - 1);
+  final wA = (source.width * region.width).round().clamp(1, source.width - xA);
+  final hA = (source.height * region.height).round().clamp(1, source.height - yA);
+  final cropA = img.copyCrop(source, x: xA, y: yA, width: wA, height: hA);
+  addCroppedVariant(cropA, 'GuideCrop');
+
+  // Variant B: Generous Center Crop (Middle 80% W x 40% H)
+  final xB = (source.width * 0.10).round().clamp(0, source.width - 1);
+  final yB = (source.height * 0.30).round().clamp(0, source.height - 1);
+  final wB = (source.width * 0.80).round().clamp(1, source.width - xB);
+  final hB = (source.height * 0.40).round().clamp(1, source.height - yB);
+  final cropB = img.copyCrop(source, x: xB, y: yB, width: wB, height: hB);
+  addCroppedVariant(cropB, 'CenterCrop');
+
+  // Variant C: Upper Center Crop (Middle 80% W x 35% H at top 15%)
+  final xC = (source.width * 0.10).round().clamp(0, source.width - 1);
+  final yC = (source.height * 0.15).round().clamp(0, source.height - 1);
+  final wC = (source.width * 0.80).round().clamp(1, source.width - xC);
+  final hC = (source.height * 0.35).round().clamp(1, source.height - yC);
+  final cropC = img.copyCrop(source, x: xC, y: yC, width: wC, height: hC);
+  addCroppedVariant(cropC, 'UpperCrop');
 
   return variants;
 }

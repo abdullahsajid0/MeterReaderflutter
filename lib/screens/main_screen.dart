@@ -27,6 +27,10 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_currentIndex == 0 ? 'WattWise' : 'Insights'),
+        leading: IconButton(
+          icon: const Icon(LucideIcons.settings),
+          onPressed: () {},
+        ),
         actions: [
           Consumer<WattWiseStore>(
             builder: (context, store, child) {
@@ -61,10 +65,6 @@ class _MainScreenState extends State<MainScreen> {
                 ],
               );
             },
-          ),
-          IconButton(
-            icon: const Icon(LucideIcons.settings),
-            onPressed: () {}, // Optional: Add settings route later
           ),
         ],
       ),

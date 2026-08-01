@@ -288,75 +288,99 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
   }
 
   int? _extractReading(RecognizedText text, int? baseline) {
-    final candidates = <int>{};
+    final Map<int, double> candidateScores = {};
 
-    void processString(String raw) {
-      if (raw.isEmpty) return;
-      
-      // Clean common character misreads
+    void addCandidate(int candidate, double score) {
+      if (candidate <= 0 || candidate > 999999999) return;
+      // Exclude common voltage/frequency noise values
+      if (candidate == 50 || candidate == 60 || candidate == 220 || candidate == 230 || candidate == 240 || candidate == 110) {
+        return;
+      }
+      candidateScores[candidate] = (candidateScores[candidate] ?? 0.0) + score;
+    }
+
+    void processString(String raw, bool isKwhLine) {
+      if (raw.trim().isEmpty) return;
+
+      final upper = raw.toUpperCase();
+      // Ignore serial numbers / 10+ digit lines
+      if (RegExp(r'\d{10,}').hasMatch(raw)) return;
+
+      // 7-segment LCD / Rolling digit repair map
       final cleaned = raw
-          .replaceAll('O', '0').replaceAll('o', '0')
-          .replaceAll('I', '1').replaceAll('i', '1').replaceAll('l', '1').replaceAll('L', '1')
-          .replaceAll('Z', '2').replaceAll('z', '2')
-          .replaceAll('S', '5').replaceAll('s', '5')
-          .replaceAll('B', '8')
-          .replaceAll('G', '6');
+          .replaceAll(RegExp(r'[O|o|D|Q]'), '0')
+          .replaceAll(RegExp(r'[I|i|l|L|\||\!]'), '1')
+          .replaceAll(RegExp(r'[Z|z]'), '2')
+          .replaceAll(RegExp(r'[E]'), '3')
+          .replaceAll(RegExp(r'[A|H]'), '4')
+          .replaceAll(RegExp(r'[S|s|\$]'), '5')
+          .replaceAll(RegExp(r'[G|b]'), '6')
+          .replaceAll(RegExp(r'[T]'), '7')
+          .replaceAll(RegExp(r'[B|R]'), '8')
+          .replaceAll(RegExp(r'[g|q]'), '9');
 
-      // Strategy A: Check decimal formatted numbers (e.g. 04223.4)
+      final lineHasKwh = isKwhLine || upper.contains('KWH') | upper.contains('KW') || upper.contains('UNIT');
+      final baseScore = lineHasKwh ? 150.0 : 30.0;
+
+      // Decimal pattern (e.g. 04223.4 kWh)
       if (_displayType == MeterDisplayType.digital) {
-        final decimal = RegExp(r'(\d{3,9})\s*[.,·]\s*\d').firstMatch(cleaned.replaceAll(' ', ''));
-        if (decimal != null) {
-          final integer = int.tryParse(decimal.group(1)!);
-          if (integer != null) candidates.add(integer);
+        final decimalMatch = RegExp(r'(\d{3,9})\s*[.,·]\s*\d').firstMatch(cleaned.replaceAll(' ', ''));
+        if (decimalMatch != null) {
+          final integer = int.tryParse(decimalMatch.group(1)!);
+          if (integer != null) addCandidate(integer, baseScore + 60.0);
         }
       }
 
-      // Strategy B: Standard regex match on digits with spaces stripped
+      // Continuous digits matching
       final noSpaces = cleaned.replaceAll(RegExp(r'\s+'), '');
       for (final match in RegExp(r'\d{3,9}').allMatches(noSpaces)) {
         final parsed = int.tryParse(match.group(0)!);
-        if (parsed != null && parsed <= 999999999) candidates.add(parsed);
+        if (parsed != null) {
+          final lenBonus = (parsed >= 1000 && parsed <= 999999) ? 40.0 : 10.0;
+          addCandidate(parsed, baseScore + lenBonus);
+        }
       }
 
-      // Strategy C: Extract pure digits from string
+      // Pure digits extraction
       final pureDigits = cleaned.replaceAll(RegExp(r'[^\d]'), '');
       if (pureDigits.length >= 3 && pureDigits.length <= 9) {
         final parsed = int.tryParse(pureDigits);
-        if (parsed != null && parsed <= 999999999) candidates.add(parsed);
+        if (parsed != null) {
+          addCandidate(parsed, baseScore + 20.0);
+        }
       }
     }
 
-    // Process each line & block individually
     for (final block in text.blocks) {
-      processString(block.text);
+      final blockHasKwh = block.text.toUpperCase().contains('KWH') || block.text.toUpperCase().contains('KW');
+      processString(block.text, blockHasKwh);
       for (final line in block.lines) {
-        processString(line.text);
+        final lineHasKwh = blockHasKwh || line.text.toUpperCase().contains('KWH') || line.text.toUpperCase().contains('KW');
+        processString(line.text, lineHasKwh);
       }
     }
 
-    // Process full concatenated text
-    String fullText = text.text;
-    processString(fullText);
+    if (candidateScores.isEmpty) return null;
 
-    if (candidates.isEmpty) return null;
-
-    // Filter by baseline delta if baseline exists
-    final safe = candidates.where((candidate) {
-      if (baseline == null) return true;
-      final delta = candidate - baseline;
-      return delta >= 0 && delta <= 50000;
-    }).toList();
-
-    // Use safe candidates if found, otherwise fallback to all candidate list (sorted by proximity to baseline)
-    final pool = safe.isNotEmpty ? safe : candidates.toList();
-    pool.sort((a, b) {
-      if (baseline == null) {
-        return b.toString().length.compareTo(a.toString().length);
+    // Apply baseline proximity bonus
+    candidateScores.forEach((candidate, currentScore) {
+      if (baseline != null) {
+        final delta = candidate - baseline;
+        if (delta >= 0 && delta <= 10000) {
+          candidateScores[candidate] = currentScore + 120.0 - (delta / 100.0);
+        } else if (delta > 10000 && delta <= 50000) {
+          candidateScores[candidate] = currentScore + 40.0;
+        } else if (delta < 0) {
+          // Penalty for being smaller than previous official reading
+          candidateScores[candidate] = currentScore - 80.0;
+        }
       }
-      return (a - baseline).abs().compareTo((b - baseline).abs());
     });
 
-    return pool.first;
+    final sortedCandidates = candidateScores.keys.toList()
+      ..sort((a, b) => candidateScores[b]!.compareTo(candidateScores[a]!));
+
+    return sortedCandidates.first;
   }
 
   int? _chooseReading(List<int> readings, int? baseline) {
@@ -370,7 +394,12 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
         final countOrder = (counts[b] ?? 0).compareTo(counts[a] ?? 0);
         if (countOrder != 0) return countOrder;
         if (baseline == null) return b.compareTo(a);
-        return (a - baseline).abs().compareTo((b - baseline).abs());
+        final deltaA = (a - baseline);
+        final deltaB = (b - baseline);
+        // Prefer positive deltas over negative deltas relative to baseline
+        final scoreA = (deltaA >= 0 && deltaA <= 50000) ? 100000 - deltaA : -100000 - deltaA.abs();
+        final scoreB = (deltaB >= 0 && deltaB <= 50000) ? 100000 - deltaB : -100000 - deltaB.abs();
+        return scoreB.compareTo(scoreA);
       });
     return ranked.first;
   }
