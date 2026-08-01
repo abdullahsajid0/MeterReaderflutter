@@ -289,45 +289,74 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
 
   int? _extractReading(RecognizedText text, int? baseline) {
     final candidates = <int>{};
-    
-    String fullText = '';
-    for (final block in text.blocks) {
-      for (final line in block.lines) {
-        fullText += '${line.text} ';
+
+    void processString(String raw) {
+      if (raw.isEmpty) return;
+      
+      // Clean common character misreads
+      final cleaned = raw
+          .replaceAll('O', '0').replaceAll('o', '0')
+          .replaceAll('I', '1').replaceAll('i', '1').replaceAll('l', '1').replaceAll('L', '1')
+          .replaceAll('Z', '2').replaceAll('z', '2')
+          .replaceAll('S', '5').replaceAll('s', '5')
+          .replaceAll('B', '8')
+          .replaceAll('G', '6');
+
+      // Strategy A: Check decimal formatted numbers (e.g. 04223.4)
+      if (_displayType == MeterDisplayType.digital) {
+        final decimal = RegExp(r'(\d{3,9})\s*[.,·]\s*\d').firstMatch(cleaned.replaceAll(' ', ''));
+        if (decimal != null) {
+          final integer = int.tryParse(decimal.group(1)!);
+          if (integer != null) candidates.add(integer);
+        }
+      }
+
+      // Strategy B: Standard regex match on digits with spaces stripped
+      final noSpaces = cleaned.replaceAll(RegExp(r'\s+'), '');
+      for (final match in RegExp(r'\d{3,9}').allMatches(noSpaces)) {
+        final parsed = int.tryParse(match.group(0)!);
+        if (parsed != null && parsed <= 999999999) candidates.add(parsed);
+      }
+
+      // Strategy C: Extract pure digits from string
+      final pureDigits = cleaned.replaceAll(RegExp(r'[^\d]'), '');
+      if (pureDigits.length >= 3 && pureDigits.length <= 9) {
+        final parsed = int.tryParse(pureDigits);
+        if (parsed != null && parsed <= 999999999) candidates.add(parsed);
       }
     }
-    
-    final value = fullText
-        .replaceAll('O', '0').replaceAll('o', '0')
-        .replaceAll('I', '1').replaceAll('i', '1').replaceAll('l', '1')
-        .replaceAll('Z', '2').replaceAll('z', '2')
-        .replaceAll('S', '5').replaceAll('s', '5')
-        .replaceAll('B', '8')
-        .replaceAll('G', '6')
-        .replaceAll(' ', '');
 
-    final decimal = RegExp(r'(\d{3,9})\s*[.,·]\s*\d').firstMatch(value);
-    if (_displayType == MeterDisplayType.digital && decimal != null) {
-      final integer = int.tryParse(decimal.group(1)!);
-      if (integer != null) candidates.add(integer);
+    // Process each line & block individually
+    for (final block in text.blocks) {
+      processString(block.text);
+      for (final line in block.lines) {
+        processString(line.text);
+      }
     }
-    
-    for (final match in RegExp(r'\d{3,9}').allMatches(value)) {
-      final parsed = int.tryParse(match.group(0)!);
-      if (parsed != null && parsed <= 999999999) candidates.add(parsed);
-    }
+
+    // Process full concatenated text
+    String fullText = text.text;
+    processString(fullText);
+
+    if (candidates.isEmpty) return null;
+
+    // Filter by baseline delta if baseline exists
     final safe = candidates.where((candidate) {
       if (baseline == null) return true;
       final delta = candidate - baseline;
-      return delta >= 0 && delta <= 10000;
+      return delta >= 0 && delta <= 50000;
     }).toList();
-    if (safe.isEmpty) return null;
-    safe.sort((a, b) {
-      if (baseline == null)
+
+    // Use safe candidates if found, otherwise fallback to all candidate list (sorted by proximity to baseline)
+    final pool = safe.isNotEmpty ? safe : candidates.toList();
+    pool.sort((a, b) {
+      if (baseline == null) {
         return b.toString().length.compareTo(a.toString().length);
-      return (a - baseline).compareTo(b - baseline);
+      }
+      return (a - baseline).abs().compareTo((b - baseline).abs());
     });
-    return safe.first;
+
+    return pool.first;
   }
 
   int? _chooseReading(List<int> readings, int? baseline) {
@@ -341,7 +370,7 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
         final countOrder = (counts[b] ?? 0).compareTo(counts[a] ?? 0);
         if (countOrder != 0) return countOrder;
         if (baseline == null) return b.compareTo(a);
-        return (a - baseline).compareTo(b - baseline);
+        return (a - baseline).abs().compareTo((b - baseline).abs());
       });
     return ranked.first;
   }
@@ -364,11 +393,12 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
           _buildModeSelector(),
           const SizedBox(height: 12),
           _buildPreview(cameraReady),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           _buildActions(cameraReady),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           const Text(
               'Place only the number window inside the guide. OCR ignores decimal digits on digital meters.',
+              textAlign: TextAlign.center,
               style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
         ],
       ),
@@ -456,21 +486,24 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
                 icon: LucideIcons.camera,
                 label: 'Capture',
                 enabled: cameraReady && !_isProcessing,
-                onPressed: _captureAndRead)),
-        const SizedBox(width: 8),
+                onPressed: _captureAndRead,
+                color: AppTheme.primary)),
+        const SizedBox(width: 12),
         Expanded(
             child: _ActionButton(
                 icon: LucideIcons.image,
                 label: 'Upload',
                 enabled: !_isProcessing,
-                onPressed: _pickImage)),
-        const SizedBox(width: 8),
+                onPressed: _pickImage,
+                color: AppTheme.accent)),
+        const SizedBox(width: 12),
         Expanded(
             child: _ActionButton(
                 icon: LucideIcons.pencil,
                 label: 'Type',
                 enabled: !_isProcessing,
-                onPressed: _showManualEntry)),
+                onPressed: _showManualEntry,
+                color: AppTheme.textPrimary)),
       ],
     );
   }
@@ -481,21 +514,57 @@ class _ActionButton extends StatelessWidget {
   final String label;
   final bool enabled;
   final VoidCallback onPressed;
+  final Color color;
 
   const _ActionButton(
       {required this.icon,
       required this.label,
       required this.enabled,
-      required this.onPressed});
+      required this.onPressed,
+      required this.color});
 
   @override
   Widget build(BuildContext context) {
-    return OutlinedButton.icon(
-        onPressed: enabled ? onPressed : null,
-        icon: Icon(icon, size: 17),
-        label: Flexible(
-          child: Text(label, maxLines: 1, softWrap: false, overflow: TextOverflow.visible),
-        ));
+    return Material(
+      color: enabled ? color.withOpacity(0.08) : AppTheme.border.withOpacity(0.3),
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: enabled ? onPressed : null,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: enabled ? color.withOpacity(0.3) : AppTheme.border,
+              width: 1.5,
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 24,
+                color: enabled ? color : AppTheme.textSecondary.withOpacity(0.5),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: enabled ? color : AppTheme.textSecondary.withOpacity(0.5),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
