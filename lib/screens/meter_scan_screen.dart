@@ -8,6 +8,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:provider/provider.dart';
 import '../services/wattwise_billing.dart';
 import '../services/meter_image_cropper.dart';
+import '../widgets/app_toast.dart';
 import '../store/wattwise_store.dart';
 import '../theme/app_theme.dart';
 
@@ -428,8 +429,11 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
 
   void _showError(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    AppToast.show(
+      context,
+      message: message,
+      type: ToastType.danger,
+    );
   }
 
   @override

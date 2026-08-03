@@ -9,6 +9,7 @@ import '../theme/app_theme.dart';
 import '../services/wattwise_billing.dart';
 import '../models/wattwise_types.dart';
 import '../widgets/billing_cycle_card.dart';
+import '../widgets/app_toast.dart';
 import '../services/pitc_bill_client.dart';
 
 /// Converted to StatefulWidget to hold the chart toggle state.
@@ -514,10 +515,10 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
     );
     if (selected == null || !context.mounted) return;
     store.setReadingSchedule(meter.id, overrideDate: toISODate(selected));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-          content: Text(
-              'Next reading set for ${DateFormat('d MMM yyyy').format(selected)}')),
+    AppToast.show(
+      context,
+      message: 'Next reading set for ${DateFormat('d MMM yyyy').format(selected)}',
+      type: ToastType.success,
     );
   }
 
@@ -572,14 +573,20 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
       );
       if (updateSchedule == true) store.applyBillSchedule(bill);
       if (context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Official bill saved')));
+        AppToast.show(
+          context,
+          message: 'Official bill saved successfully!',
+          type: ToastType.success,
+        );
       }
     } catch (error) {
       if (context.mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Bill lookup failed: $error')));
+        AppToast.show(
+          context,
+          message: 'Bill lookup: $error',
+          type: ToastType.warning,
+        );
       }
     }
   }

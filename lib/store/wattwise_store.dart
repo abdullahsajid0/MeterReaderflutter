@@ -11,11 +11,19 @@ const String READINGS_KEY = "wattwise.readings.v2";
 const String BILLS_KEY = "wattwise.bills.v2";
 const String DISMISS_KEY = "wattwise.dismissed.v2";
 
+const String PROVIDER_KEY = "wattwise.provider.v2";
+const String REMINDERS_KEY = "wattwise.reminders.v2";
+const String TARIFF_KEY = "wattwise.tariff.v2";
+
 class WattWiseStore extends ChangeNotifier {
   List<Meter> meters = [];
   List<Reading> readings = [];
   List<BillInfo> bills = [];
   List<String> dismissed = [];
+
+  String defaultCompany = 'LESCO';
+  bool remindersEnabled = true;
+  bool protectedTariff = false;
 
   bool _hydrated = false;
   final Uuid _uuid = const Uuid();
@@ -39,6 +47,10 @@ class WattWiseStore extends ChangeNotifier {
     bills = billsJson.map((e) => BillInfo.fromJson(jsonDecode(e))).toList();
 
     dismissed = prefs.getStringList(DISMISS_KEY) ?? [];
+
+    defaultCompany = prefs.getString(PROVIDER_KEY) ?? 'LESCO';
+    remindersEnabled = prefs.getBool(REMINDERS_KEY) ?? true;
+    protectedTariff = prefs.getBool(TARIFF_KEY) ?? false;
 
     _hydrated = true;
     notifyListeners();
@@ -68,6 +80,27 @@ class WattWiseStore extends ChangeNotifier {
   Future<void> _persistDismissed() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setStringList(DISMISS_KEY, dismissed);
+    notifyListeners();
+  }
+
+  Future<void> setDefaultCompany(String company) async {
+    defaultCompany = company;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(PROVIDER_KEY, company);
+    notifyListeners();
+  }
+
+  Future<void> setRemindersEnabled(bool enabled) async {
+    remindersEnabled = enabled;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(REMINDERS_KEY, enabled);
+    notifyListeners();
+  }
+
+  Future<void> setProtectedTariff(bool protected) async {
+    protectedTariff = protected;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(TARIFF_KEY, protected);
     notifyListeners();
   }
 
