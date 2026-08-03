@@ -1,21 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:fl_chart/fl_chart.dart';
 import '../store/wattwise_store.dart';
 import '../theme/app_theme.dart';
 import '../services/wattwise_billing.dart';
 import '../models/wattwise_types.dart';
 
-class InsightsScreen extends StatefulWidget {
+class InsightsScreen extends StatelessWidget {
   const InsightsScreen({super.key});
-
-  @override
-  State<InsightsScreen> createState() => _InsightsScreenState();
-}
-
-class _InsightsScreenState extends State<InsightsScreen> {
-  bool _showAreaChart = false;
 
   @override
   Widget build(BuildContext context) {
@@ -64,8 +56,6 @@ class _InsightsScreenState extends State<InsightsScreen> {
         int householdTargetPerDay = minRemainingDays > 0 && totalRemainingUnits > 0
             ? (totalRemainingUnits / minRemainingDays).round()
             : 0;
-
-        final stats = analytics(store.readings);
 
         return ListView(
           padding: const EdgeInsets.all(16),
@@ -124,38 +114,13 @@ class _InsightsScreenState extends State<InsightsScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Consumption Visual Trend',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleMedium
-                        ?.copyWith(fontWeight: FontWeight.bold)),
-                Container(
-                  decoration: BoxDecoration(
-                    color: AppTheme.surface,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      _chartToggleButton(
-                        icon: LucideIcons.barChart2,
-                        isActive: !_showAreaChart,
-                        onTap: () => setState(() => _showAreaChart = false),
-                      ),
-                      _chartToggleButton(
-                        icon: LucideIcons.lineChart,
-                        isActive: _showAreaChart,
-                        onTap: () => setState(() => _showAreaChart = true),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+            Text('Consumption Visual Trend',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
-            _buildSwitchableConsumptionGraph(context, meters, store, stats),
+            _buildConsumptionGraph(context, meters, store),
             const SizedBox(height: 24),
             Text('Meter Breakdown & Targets',
                 style: Theme.of(context)
@@ -167,24 +132,6 @@ class _InsightsScreenState extends State<InsightsScreen> {
           ],
         );
       },
-    );
-  }
-
-  Widget _chartToggleButton({
-    required IconData icon,
-    required bool isActive,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: isActive ? AppTheme.accent : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(icon, size: 16, color: isActive ? Colors.white : AppTheme.textSecondary),
-      ),
     );
   }
 
@@ -272,156 +219,67 @@ class _InsightsScreenState extends State<InsightsScreen> {
     );
   }
 
-  Widget _buildSwitchableConsumptionGraph(
-      BuildContext context, List<Meter> meters, WattWiseStore store, AnalyticsResult stats) {
+  Widget _buildConsumptionGraph(BuildContext context, List<Meter> meters, WattWiseStore store) {
+    // Generate data per meter for graph
+    final List<MapEntry<String, int>> data = [];
+    int maxVal = 10;
+    for (var m in meters) {
+      final used = store.unitsThisCycle(m);
+      data.add(MapEntry(m.nickname, used));
+      if (used > maxVal) maxVal = used;
+    }
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            const Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  _showAreaChart ? 'Historical Usage Area Trend' : 'Current Cycle Breakdown',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                ),
-                Icon(_showAreaChart ? LucideIcons.lineChart : LucideIcons.barChart2,
-                    size: 18, color: AppTheme.accent),
+                Text('Current Cycle Usage', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                Icon(LucideIcons.barChart2, size: 18, color: AppTheme.textSecondary),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             SizedBox(
-              height: 180,
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 300),
-                child: _showAreaChart
-                    ? _buildFlAreaChart(stats)
-                    : _buildFlBarChart(meters, store),
+              height: 140,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: data.map((e) {
+                  final double pct = (e.value / maxVal).clamp(0.08, 1.0);
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Text('${e.value}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                      const SizedBox(height: 6),
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 500),
+                        width: 32,
+                        height: 90 * pct,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [AppTheme.accent, AppTheme.accentGradient],
+                            begin: Alignment.bottomCenter,
+                            end: Alignment.topCenter,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        e.key.length > 8 ? '${e.key.substring(0, 7)}…' : e.key,
+                        style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                      ),
+                    ],
+                  );
+                }).toList(),
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildFlBarChart(List<Meter> meters, WattWiseStore store) {
-    final entries = meters.map((m) => MapEntry(m.nickname, store.unitsThisCycle(m).toDouble())).toList();
-    final double maxY = entries.map((e) => e.value).fold(10.0, (prev, element) => element > prev ? element : prev) * 1.2;
-
-    return BarChart(
-      key: const ValueKey('insights_bar'),
-      BarChartData(
-        alignment: BarChartAlignment.spaceAround,
-        maxY: maxY,
-        titlesData: FlTitlesData(
-          show: true,
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              getTitlesWidget: (value, meta) {
-                final idx = value.toInt();
-                if (idx < 0 || idx >= entries.length) return const SizedBox();
-                final name = entries[idx].key;
-                return Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
-                  child: Text(name.length > 7 ? '${name.substring(0, 6)}…' : name,
-                      style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary)),
-                );
-              },
-            ),
-          ),
-          leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        ),
-        borderData: FlBorderData(show: false),
-        gridData: const FlGridData(show: false),
-        barGroups: entries.asMap().entries.map((entry) {
-          return BarChartGroupData(
-            x: entry.key,
-            barRods: [
-              BarChartRodData(
-                toY: entry.value.value,
-                color: AppTheme.accent,
-                width: 20,
-                borderRadius: BorderRadius.circular(6),
-              )
-            ],
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildFlAreaChart(AnalyticsResult stats) {
-    if (stats.months.isEmpty) {
-      return const Center(child: Text('No historical readings yet for area graph.', style: TextStyle(color: AppTheme.textSecondary)));
-    }
-
-    return LineChart(
-      key: const ValueKey('insights_area'),
-      LineChartData(
-        gridData: const FlGridData(show: false),
-        titlesData: FlTitlesData(
-          show: true,
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              getTitlesWidget: (value, meta) {
-                final idx = value.toInt();
-                if (idx < 0 || idx >= stats.months.length) return const SizedBox();
-                final monthStr = stats.months[idx].key;
-                final label = monthStr.split('-')[1];
-                return Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
-                  child: Text(label, style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary)),
-                );
-              },
-            ),
-          ),
-          leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        ),
-        borderData: FlBorderData(show: false),
-        lineTouchData: const LineTouchData(enabled: true),
-        minY: 0,
-        lineBarsData: [
-          LineChartBarData(
-            spots: stats.months.asMap().entries.map((e) {
-              return FlSpot(e.key.toDouble(), e.value.value.toDouble());
-            }).toList(),
-            isCurved: true,
-            color: AppTheme.primary,
-            barWidth: 3,
-            isStrokeCapRound: true,
-            dotData: FlDotData(
-              show: true,
-              getDotPainter: (spot, percent, barData, index) {
-                return FlDotCirclePainter(
-                  radius: 4,
-                  color: AppTheme.primary,
-                  strokeWidth: 2,
-                  strokeColor: Colors.white,
-                );
-              },
-            ),
-            belowBarData: BarAreaData(
-              show: true,
-              gradient: LinearGradient(
-                colors: [
-                  AppTheme.primary.withOpacity(0.35),
-                  AppTheme.primary.withOpacity(0.0),
-                ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
