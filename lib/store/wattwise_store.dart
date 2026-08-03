@@ -150,8 +150,7 @@ class WattWiseStore extends ChangeNotifier {
 
     readings = [
       reading,
-      ...readings.where((r) =>
-          !(r.meterId == reading.meterId && r.cycleEnd == reading.cycleEnd))
+      ...readings
     ];
     _persistReadings();
 

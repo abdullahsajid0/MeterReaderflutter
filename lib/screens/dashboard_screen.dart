@@ -68,9 +68,22 @@ class DashboardScreen extends StatelessWidget {
   Widget _buildMeterCard(BuildContext context, Meter m, WattWiseStore store) {
     final used = store.unitsThisCycle(m);
     final cycle = cycleFor(m);
+    
+    final daysElapsed = cycle.daysElapsed;
+    final remainingDays = cycle.daysRemaining;
+    
     double pct = 0;
+    String averageText = "";
+    
     if (m.monthlyLimit != null && m.monthlyLimit! > 0) {
       pct = used / m.monthlyLimit!;
+      int remainingUnits = m.monthlyLimit! - used;
+      if (remainingUnits < 0) remainingUnits = 0;
+      int targetPerDay = remainingDays > 0 ? (remainingUnits / remainingDays).round() : 0;
+      averageText = 'Target: ~$targetPerDay units/day';
+    } else {
+      int avgPerDay = daysElapsed > 0 ? (used / daysElapsed).round() : 0;
+      averageText = 'Avg: ~$avgPerDay units/day';
     }
 
     Color progressColor = AppTheme.success;
@@ -126,19 +139,47 @@ class DashboardScreen extends StatelessWidget {
                               style: const TextStyle(
                                   fontWeight: FontWeight.bold, fontSize: 17)),
                           const SizedBox(height: 2),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppTheme.accent.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              m.company.toUpperCase(),
-                              style: const TextStyle(
-                                  color: AppTheme.accent,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 11),
-                            ),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.accent.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  m.company.toUpperCase(),
+                                  style: const TextStyle(
+                                      color: AppTheme.accent,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 11),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.border.withOpacity(0.5),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Text('REF ',
+                                        style: TextStyle(
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppTheme.textSecondary)),
+                                    Text(
+                                      m.referenceNumber,
+                                      style: const TextStyle(
+                                          fontFamily: 'monospace',
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 11),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -180,6 +221,22 @@ class DashboardScreen extends StatelessWidget {
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                 const SizedBox(height: 8),
               ],
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppTheme.surface,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(m.monthlyLimit != null ? LucideIcons.target : LucideIcons.activity, size: 14, color: AppTheme.textSecondary),
+                    const SizedBox(width: 6),
+                    Text(averageText,
+                        style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
