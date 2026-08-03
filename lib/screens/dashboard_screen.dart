@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:fl_chart/fl_chart.dart';
 import '../store/wattwise_store.dart';
 import '../theme/app_theme.dart';
 import '../models/wattwise_types.dart';
@@ -43,8 +42,6 @@ class DashboardScreen extends StatelessWidget {
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            _buildTotalOverviewCard(context, store),
-            const SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -65,109 +62,6 @@ class DashboardScreen extends StatelessWidget {
           ],
         );
       },
-    );
-  }
-
-  Widget _buildTotalOverviewCard(BuildContext context, WattWiseStore store) {
-    if (store.meters.isEmpty) return const SizedBox();
-    
-    int totalUsed = 0;
-    int totalLimit = 0;
-    bool hasAnyLimit = false;
-
-    for (var m in store.meters) {
-      totalUsed += store.unitsThisCycle(m);
-      if (m.monthlyLimit != null && m.monthlyLimit! > 0) {
-        totalLimit += m.monthlyLimit!;
-        hasAnyLimit = true;
-      }
-    }
-
-    final stats = analytics(store.readings);
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Total Consuming', style: TextStyle(color: AppTheme.textSecondary, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '$totalUsed',
-                  style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold, height: 1.0),
-                ),
-                if (hasAnyLimit) ...[
-                  const Padding(
-                    padding: EdgeInsets.only(bottom: 4, left: 4, right: 4),
-                    child: Text('/', style: TextStyle(fontSize: 18, color: AppTheme.textSecondary)),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 2),
-                    child: Text(
-                      '$totalLimit units',
-                      style: const TextStyle(fontSize: 16, color: AppTheme.textSecondary, fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ] else ...[
-                  const Padding(
-                    padding: EdgeInsets.only(bottom: 2, left: 6),
-                    child: Text('units', style: TextStyle(fontSize: 16, color: AppTheme.textSecondary, fontWeight: FontWeight.w600)),
-                  ),
-                ],
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Across ${store.meters.length} meter${store.meters.length == 1 ? '' : 's'}',
-              style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
-            ),
-            if (stats.months.length >= 2) ...[
-              const SizedBox(height: 24),
-              const Text('6-MONTH TREND', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.textSecondary, letterSpacing: 1.0)),
-              const SizedBox(height: 12),
-              SizedBox(
-                height: 80,
-                child: LineChart(
-                  LineChartData(
-                    gridData: const FlGridData(show: false),
-                    titlesData: const FlTitlesData(show: false),
-                    borderData: FlBorderData(show: false),
-                    lineTouchData: const LineTouchData(enabled: false),
-                    minY: 0,
-                    lineBarsData: [
-                      LineChartBarData(
-                        spots: stats.months.asMap().entries.map((e) {
-                          return FlSpot(e.key.toDouble(), e.value.value.toDouble());
-                        }).toList(),
-                        isCurved: true,
-                        color: AppTheme.primary,
-                        barWidth: 3,
-                        isStrokeCapRound: true,
-                        dotData: const FlDotData(show: false),
-                        belowBarData: BarAreaData(
-                          show: true,
-                          gradient: LinearGradient(
-                            colors: [
-                              AppTheme.primary.withOpacity(0.3),
-                              AppTheme.primary.withOpacity(0.0),
-                            ],
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ]
-          ],
-        ),
-      ),
     );
   }
 

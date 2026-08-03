@@ -24,6 +24,7 @@ dependencies:
   collection: ^1.18.0
   image_picker: ^1.2.3
   image: ^4.9.1
+  flutter_local_notifications: ^18.0.1
 
 dev_dependencies:
   flutter_test:

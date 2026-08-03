@@ -177,6 +177,12 @@ class WattWiseStore extends ChangeNotifier {
     ];
     _persistBills();
 
+    // Reset readings for this meter's current billing cycle
+    // since the official bill has arrived
+    readings = readings.where((r) =>
+        !(r.meterId == bill.meterId && r.billingMonth == bill.billingMonth)).toList();
+    _persistReadings();
+
     meters = meters
         .map((m) => m.id == bill.meterId
             ? m.copyWith(lastBillFetchAt: bill.fetchedAt)
