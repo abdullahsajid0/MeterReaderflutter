@@ -190,14 +190,18 @@ class AnalyticsResult {
 
 class DailyUsagePoint {
   final DateTime date;
-  final String label;
+  final String label; // e.g. "15 Aug"
+  final String shortLabel; // e.g. "15"
   final double units;
+  final int? readingValue;
   final bool hasActualReading;
 
   DailyUsagePoint({
     required this.date,
     required this.label,
+    required this.shortLabel,
     required this.units,
+    this.readingValue,
     this.hasActualReading = false,
   });
 }
@@ -209,39 +213,60 @@ List<DailyUsagePoint> computeDailyCycleUsage(List<Reading> readings, Cycle cycle
   final sorted = [...readings];
   sorted.sort((a, b) => a.scannedAt.compareTo(b.scannedAt));
 
-  Map<String, double> dayUnits = {};
-  Set<String> actualReadingDates = {};
-
+  // 1. Group readings by 24-hour calendar day (yyyy-MM-dd)
+  Map<String, List<Reading>> dayGroups = {};
   for (var r in sorted) {
     final dt = DateTime.tryParse(r.scannedAt);
     if (dt != null) {
-      actualReadingDates.add(toISODate(dt));
+      final dayKey = toISODate(dt);
+      dayGroups.putIfAbsent(dayKey, () => []).add(r);
     }
   }
 
-  if (sorted.length == 1) {
-    final r = sorted.first;
-    final scanDate = DateTime.tryParse(r.scannedAt) ?? cycle.start;
-    final scanDateStr = toISODate(scanDate);
-    dayUnits[scanDateStr] = r.unitsConsumed.toDouble();
-  } else {
-    for (int i = 1; i < sorted.length; i++) {
-      final prev = sorted[i - 1];
-      final curr = sorted[i];
-      final prevDate = DateTime.tryParse(prev.scannedAt) ?? cycle.start;
-      final currDate = DateTime.tryParse(curr.scannedAt) ?? cycle.end;
-      final delta = (curr.currentReading - prev.currentReading).clamp(0, 999999);
-      final days = daysBetween(prevDate, currDate);
+  // 2. Determine 24-hour daily consumption
+  Map<String, double> dayUnits = {};
+  Map<String, int> dayLatestReading = {};
+  final dayKeys = dayGroups.keys.toList()..sort();
 
-      if (days <= 1) {
-        final key = toISODate(currDate);
-        dayUnits[key] = (dayUnits[key] ?? 0) + delta.toDouble();
+  if (dayKeys.length == 1) {
+    final key = dayKeys.first;
+    final dayReadings = dayGroups[key]!;
+    final earliest = dayReadings.first;
+    final latest = dayReadings.last;
+    if (dayReadings.length > 1) {
+      dayUnits[key] = (latest.currentReading - earliest.previousReading).clamp(0, 999999).toDouble();
+    } else {
+      dayUnits[key] = latest.unitsConsumed.toDouble();
+    }
+    dayLatestReading[key] = latest.currentReading;
+  } else {
+    for (int i = 0; i < dayKeys.length; i++) {
+      final currKey = dayKeys[i];
+      final currReadings = dayGroups[currKey]!;
+      final latest = currReadings.last;
+      dayLatestReading[currKey] = latest.currentReading;
+
+      if (i == 0) {
+        final earliest = currReadings.first;
+        final totalDayDelta = (latest.currentReading - earliest.previousReading).clamp(0, 999999);
+        dayUnits[currKey] = totalDayDelta.toDouble();
       } else {
-        final perDay = delta / days;
-        for (int d = 1; d <= days; d++) {
-          final dayDt = prevDate.add(Duration(days: d));
-          final key = toISODate(dayDt);
-          dayUnits[key] = (dayUnits[key] ?? 0) + perDay;
+        final prevKey = dayKeys[i - 1];
+        final prevLatest = dayGroups[prevKey]!.last;
+        final prevDt = DateTime.parse(prevKey);
+        final currDt = DateTime.parse(currKey);
+        final days = daysBetween(prevDt, currDt);
+        final delta = (latest.currentReading - prevLatest.currentReading).clamp(0, 999999);
+
+        if (days <= 1) {
+          dayUnits[currKey] = (dayUnits[currKey] ?? 0) + delta.toDouble();
+        } else {
+          final perDay = delta / days;
+          for (int d = 1; d <= days; d++) {
+            final dayDt = prevDt.add(Duration(days: d));
+            final k = toISODate(dayDt);
+            dayUnits[k] = (dayUnits[k] ?? 0) + perDay;
+          }
         }
       }
     }
@@ -259,8 +284,10 @@ List<DailyUsagePoint> computeDailyCycleUsage(List<Reading> readings, Cycle cycle
     points.add(DailyUsagePoint(
       date: d,
       label: DateFormat('d MMM').format(d),
-      units: val,
-      hasActualReading: actualReadingDates.contains(key),
+      shortLabel: '${d.day}',
+      units: (val * 10).roundToDouble() / 10,
+      readingValue: dayLatestReading[key],
+      hasActualReading: dayGroups.containsKey(key),
     ));
   }
 

@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
@@ -25,6 +26,8 @@ enum ChartTimeframe { daily, monthly }
 
 class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
   ChartTimeframe _timeframe = ChartTimeframe.daily;
+  double _zoomLevel = 1.0; // 1.0x (Fit), 2.5x (Day-by-Day), 4.0x (Ultra detail)
+  DailyUsagePoint? _selectedDailyPoint;
 
   @override
   Widget build(BuildContext context) {
@@ -261,7 +264,7 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
     );
   }
 
-  // ─── Area Usage Graph (Daily & Monthly) ──────────────────────────────
+  // ─── Area Usage Graph (Daily & Monthly with Zoom) ───────────────────
   Widget _buildAreaUsageCard(
     BuildContext context,
     AnalyticsResult stats,
@@ -286,7 +289,7 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Timeframe Selector Row (with Flexible / Expanded to prevent overflow)
+          // Timeframe & Zoom Header Row
           Row(
             children: [
               Expanded(
@@ -301,6 +304,7 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
                 ),
               ),
               const SizedBox(width: 8),
+              // Daily vs Monthly pill selector
               Container(
                 padding: const EdgeInsets.all(3),
                 decoration: BoxDecoration(
@@ -329,21 +333,100 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
 
           const SizedBox(height: 6),
 
-          Text(
-            isDaily
-                ? 'Units consumed per day based on cycle readings'
-                : 'Aggregated monthly consumption overview',
-            style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+          // Subtitle + Zoom Controls (if Daily)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  isDaily
+                      ? '24-hour daily consumption across cycle days'
+                      : 'Aggregated monthly consumption overview',
+                  style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (isDaily && dailyPoints.isNotEmpty) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppTheme.background,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppTheme.border),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _zoomButton(
+                        label: '1x',
+                        isActive: _zoomLevel == 1.0,
+                        onTap: () => setState(() => _zoomLevel = 1.0),
+                      ),
+                      _zoomButton(
+                        label: '2.5x',
+                        isActive: _zoomLevel == 2.5,
+                        onTap: () => setState(() => _zoomLevel = 2.5),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
           ),
 
-          const SizedBox(height: 18),
+          // Selected Point Details Card (if tapped)
+          if (_selectedDailyPoint != null && isDaily) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppTheme.accent.withOpacity(0.06),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppTheme.accent.withOpacity(0.2)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(LucideIcons.calendar, size: 14, color: AppTheme.accent),
+                  const SizedBox(width: 6),
+                  Text(
+                    _selectedDailyPoint!.label,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '· ${_selectedDailyPoint!.units} units',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                      color: AppTheme.accent,
+                    ),
+                  ),
+                  if (_selectedDailyPoint!.readingValue != null) ...[
+                    const Spacer(),
+                    Text(
+                      'Reading: ${_selectedDailyPoint!.readingValue}',
+                      style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
 
+          const SizedBox(height: 16),
+
+          // Scrollable Zoomable Area Graph
           SizedBox(
-            height: 190,
+            height: 195,
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 250),
               child: isDaily
-                  ? _buildDailyAreaChart(dailyPoints)
+                  ? _buildZoomableDailyAreaChart(dailyPoints)
                   : _buildMonthlyAreaChart(stats),
             ),
           ),
@@ -386,8 +469,33 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
     );
   }
 
-  // ─── Daily Area Chart (with Vertical Y-Axis Units & Soft Grid) ────────
-  Widget _buildDailyAreaChart(List<DailyUsagePoint> points) {
+  Widget _zoomButton({
+    required String label,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: isActive ? AppTheme.accent : Colors.transparent,
+          borderRadius: BorderRadius.circular(5),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: isActive ? Colors.white : AppTheme.textSecondary,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─── Zoomable Daily Area Chart (Every Single 24h Day) ─────────────────
+  Widget _buildZoomableDailyAreaChart(List<DailyUsagePoint> points) {
     if (points.isEmpty) {
       return const Center(
         child: Text('No daily data available for this cycle', style: TextStyle(color: AppTheme.textMuted)),
@@ -396,114 +504,185 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
 
     double maxVal = points.map((p) => p.units).fold(0.0, (a, b) => a > b ? a : b);
     if (maxVal <= 0) maxVal = 10;
-
     final double yInterval = (maxVal / 3).clamp(1.0, 1000.0);
 
-    return LineChart(
-      key: const ValueKey('daily_area'),
-      LineChartData(
-        gridData: FlGridData(
-          show: true,
-          drawVerticalLine: false,
-          horizontalInterval: yInterval,
-          getDrawingHorizontalLine: (value) => FlLine(
-            color: AppTheme.border.withOpacity(0.5),
-            strokeWidth: 1,
-            dashArray: [4, 4],
-          ),
-        ),
-        titlesData: FlTitlesData(
-          show: true,
-          leftTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              reservedSize: 34,
-              interval: yInterval,
-              getTitlesWidget: (value, meta) {
-                if (value == 0) return const SizedBox();
-                return Padding(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: Text(
-                    value >= 1000
-                        ? '${(value / 1000).toStringAsFixed(1)}k'
-                        : value.round().toString(),
-                    textAlign: TextAlign.right,
-                    style: const TextStyle(
-                      fontSize: 10,
-                      color: AppTheme.textMuted,
-                      fontWeight: FontWeight.w600,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final availableWidth = constraints.maxWidth;
+        // When zoomed in (e.g. 2.5x), each day has ample space (36px per day), enabling full day-by-day labeling (1, 2, 3, 4...)
+        final chartWidth = _zoomLevel > 1.0
+            ? math.max(availableWidth, points.length * 36.0 * (_zoomLevel / 2.0))
+            : availableWidth;
+
+        final isZoomed = _zoomLevel > 1.0;
+
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          physics: isZoomed
+              ? const BouncingScrollPhysics()
+              : const NeverScrollableScrollPhysics(),
+          child: SizedBox(
+            width: chartWidth,
+            height: 195,
+            child: LineChart(
+              key: ValueKey('daily_area_zoom_$_zoomLevel'),
+              LineChartData(
+                gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: isZoomed,
+                  verticalInterval: 1.0,
+                  horizontalInterval: yInterval,
+                  getDrawingHorizontalLine: (value) => FlLine(
+                    color: AppTheme.border.withOpacity(0.5),
+                    strokeWidth: 1,
+                    dashArray: [4, 4],
+                  ),
+                  getDrawingVerticalLine: (value) => FlLine(
+                    color: AppTheme.border.withOpacity(0.2),
+                    strokeWidth: 1,
+                  ),
+                ),
+                titlesData: FlTitlesData(
+                  show: true,
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 34,
+                      interval: yInterval,
+                      getTitlesWidget: (value, meta) {
+                        if (value == 0) return const SizedBox();
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: Text(
+                            value >= 1000
+                                ? '${(value / 1000).toStringAsFixed(1)}k'
+                                : value.round().toString(),
+                            textAlign: TextAlign.right,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: AppTheme.textMuted,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
-                );
-              },
-            ),
-          ),
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              interval: (points.length / 5).clamp(1, 10).toDouble(),
-              getTitlesWidget: (value, meta) {
-                final idx = value.toInt();
-                if (idx < 0 || idx >= points.length) return const SizedBox();
-                return Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
-                  child: Text(
-                    points[idx].label,
-                    style: const TextStyle(
-                      fontSize: 10,
-                      color: AppTheme.textSecondary,
-                      fontWeight: FontWeight.w500,
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      // When zoomed, interval is 1.0 (EVERY SINGLE DAY 1, 2, 3, 4, 5... is shown!)
+                      interval: isZoomed ? 1.0 : (points.length / 5).clamp(1, 10).toDouble(),
+                      getTitlesWidget: (value, meta) {
+                        final idx = value.toInt();
+                        if (idx < 0 || idx >= points.length) return const SizedBox();
+                        final p = points[idx];
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Text(
+                            isZoomed ? p.shortLabel : p.label,
+                            style: TextStyle(
+                              fontSize: isZoomed ? 11 : 10,
+                              color: p.hasActualReading ? AppTheme.accent : AppTheme.textSecondary,
+                              fontWeight: p.hasActualReading || isZoomed ? FontWeight.w700 : FontWeight.w500,
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
-                );
-              },
-            ),
-          ),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        ),
-        borderData: FlBorderData(show: false),
-        lineTouchData: const LineTouchData(enabled: true),
-        minY: 0,
-        maxY: maxVal * 1.25,
-        lineBarsData: [
-          LineChartBarData(
-            spots: points.asMap().entries.map((e) {
-              return FlSpot(e.key.toDouble(), e.value.units);
-            }).toList(),
-            isCurved: true,
-            color: AppTheme.accent,
-            barWidth: 3,
-            isStrokeCapRound: true,
-            dotData: FlDotData(
-              show: true,
-              checkToShowDot: (spot, barData) {
-                final idx = spot.x.toInt();
-                return idx >= 0 && idx < points.length && points[idx].hasActualReading;
-              },
-              getDotPainter: (spot, percent, barData, index) {
-                return FlDotCirclePainter(
-                  radius: 4.5,
-                  color: AppTheme.accent,
-                  strokeWidth: 2,
-                  strokeColor: Colors.white,
-                );
-              },
-            ),
-            belowBarData: BarAreaData(
-              show: true,
-              gradient: LinearGradient(
-                colors: [
-                  AppTheme.accent.withOpacity(0.22),
-                  AppTheme.accent.withOpacity(0.0),
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                ),
+                borderData: FlBorderData(show: false),
+                lineTouchData: LineTouchData(
+                  enabled: true,
+                  touchCallback: (event, response) {
+                    if (response?.lineBarSpots != null && response!.lineBarSpots!.isNotEmpty) {
+                      final spot = response.lineBarSpots!.first;
+                      final idx = spot.x.toInt();
+                      if (idx >= 0 && idx < points.length) {
+                        setState(() {
+                          _selectedDailyPoint = points[idx];
+                        });
+                      }
+                    }
+                  },
+                  touchTooltipData: LineTouchTooltipData(
+                    getTooltipItems: (touchedSpots) {
+                      return touchedSpots.map((spot) {
+                        final idx = spot.x.toInt();
+                        if (idx < 0 || idx >= points.length) return null;
+                        final p = points[idx];
+                        return LineTooltipItem(
+                          '${p.label}\n',
+                          const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                          children: [
+                            TextSpan(
+                              text: '${p.units} units',
+                              style: const TextStyle(
+                                color: Color(0xFFFBBF24),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        );
+                      }).toList();
+                    },
+                  ),
+                ),
+                minY: 0,
+                maxY: maxVal * 1.25,
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: points.asMap().entries.map((e) {
+                      return FlSpot(e.key.toDouble(), e.value.units);
+                    }).toList(),
+                    isCurved: true,
+                    color: AppTheme.accent,
+                    barWidth: 3,
+                    isStrokeCapRound: true,
+                    dotData: FlDotData(
+                      show: true,
+                      checkToShowDot: (spot, barData) {
+                        final idx = spot.x.toInt();
+                        if (isZoomed) return true; // Show all dots when zoomed into daily view!
+                        return idx >= 0 && idx < points.length && points[idx].hasActualReading;
+                      },
+                      getDotPainter: (spot, percent, barData, index) {
+                        final idx = spot.x.toInt();
+                        final isActual = idx >= 0 && idx < points.length && points[idx].hasActualReading;
+                        return FlDotCirclePainter(
+                          radius: isActual ? 4.5 : 2.5,
+                          color: isActual ? AppTheme.accent : AppTheme.accent.withOpacity(0.7),
+                          strokeWidth: 2,
+                          strokeColor: Colors.white,
+                        );
+                      },
+                    ),
+                    belowBarData: BarAreaData(
+                      show: true,
+                      gradient: LinearGradient(
+                        colors: [
+                          AppTheme.accent.withOpacity(0.22),
+                          AppTheme.accent.withOpacity(0.0),
+                        ],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ),
+                    ),
+                  ),
                 ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
               ),
             ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -517,7 +696,6 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
 
     double maxVal = stats.months.map((m) => m.value).fold(0, (a, b) => a > b ? a : b).toDouble();
     if (maxVal <= 0) maxVal = 100;
-
     final double yInterval = (maxVal / 3).clamp(1.0, 1000.0);
 
     return LineChart(
