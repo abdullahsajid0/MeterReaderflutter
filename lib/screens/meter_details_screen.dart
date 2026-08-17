@@ -26,7 +26,7 @@ enum ChartTimeframe { daily, monthly }
 
 class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
   ChartTimeframe _timeframe = ChartTimeframe.daily;
-  double _zoomLevel = 1.0; // 1.0x (Fit), 2.5x (Day-by-Day), 4.0x (Ultra detail)
+  double _zoomLevel = 1.0;
   DailyUsagePoint? _selectedDailyPoint;
 
   @override
@@ -264,7 +264,7 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
     );
   }
 
-  // ─── Area Usage Graph (Daily & Monthly with Zoom) ───────────────────
+  // ─── Area Usage Graph (Daily & Monthly with Sticky Y-Axis & Zoom) ────
   Widget _buildAreaUsageCard(
     BuildContext context,
     AnalyticsResult stats,
@@ -289,7 +289,7 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Timeframe & Zoom Header Row
+          // Timeframe Header Row
           Row(
             children: [
               Expanded(
@@ -331,23 +331,22 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
             ],
           ),
 
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
 
-          // Subtitle + Zoom Controls (if Daily)
+          // Subtitle + Zoom Controls (Clean, un-truncated layout)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Expanded(
-                child: Text(
-                  isDaily
-                      ? '24-hour daily consumption across cycle days'
-                      : 'Aggregated monthly consumption overview',
-                  style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
-                  overflow: TextOverflow.ellipsis,
+              Text(
+                isDaily ? '24h Daily Usage (Units)' : 'Monthly Overview (Units)',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppTheme.textSecondary,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
               if (isDaily && dailyPoints.isNotEmpty) ...[
-                const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                   decoration: BoxDecoration(
@@ -359,12 +358,12 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       _zoomButton(
-                        label: '1x',
+                        label: '1x Fit',
                         isActive: _zoomLevel == 1.0,
                         onTap: () => setState(() => _zoomLevel = 1.0),
                       ),
                       _zoomButton(
-                        label: '2.5x',
+                        label: '2.5x Detail',
                         isActive: _zoomLevel == 2.5,
                         onTap: () => setState(() => _zoomLevel = 2.5),
                       ),
@@ -420,7 +419,7 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
 
           const SizedBox(height: 16),
 
-          // Scrollable Zoomable Area Graph
+          // Sticky Y-Axis + Zoomable Area Graph
           SizedBox(
             height: 195,
             child: AnimatedSwitcher(
@@ -477,10 +476,10 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
           color: isActive ? AppTheme.accent : Colors.transparent,
-          borderRadius: BorderRadius.circular(5),
+          borderRadius: BorderRadius.circular(6),
         ),
         child: Text(
           label,
@@ -494,7 +493,7 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
     );
   }
 
-  // ─── Zoomable Daily Area Chart (Every Single 24h Day) ─────────────────
+  // ─── Sticky Y-Axis + Zoomable Daily Area Chart ────────────────────────
   Widget _buildZoomableDailyAreaChart(List<DailyUsagePoint> points) {
     if (points.isEmpty) {
       return const Center(
@@ -505,188 +504,202 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
     double maxVal = points.map((p) => p.units).fold(0.0, (a, b) => a > b ? a : b);
     if (maxVal <= 0) maxVal = 10;
     final double yInterval = (maxVal / 3).clamp(1.0, 1000.0);
+    final isZoomed = _zoomLevel > 1.0;
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final availableWidth = constraints.maxWidth;
-        // When zoomed in (e.g. 2.5x), each day has ample space (36px per day), enabling full day-by-day labeling (1, 2, 3, 4...)
-        final chartWidth = _zoomLevel > 1.0
-            ? math.max(availableWidth, points.length * 36.0 * (_zoomLevel / 2.0))
-            : availableWidth;
+        const double yAxisWidth = 28.0;
+        final chartAvailableWidth = availableWidth - yAxisWidth - 6;
+        final chartContentWidth = isZoomed
+            ? math.max(chartAvailableWidth, points.length * 36.0 * (_zoomLevel / 2.0))
+            : chartAvailableWidth;
 
-        final isZoomed = _zoomLevel > 1.0;
-
-        return SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          physics: isZoomed
-              ? const BouncingScrollPhysics()
-              : const NeverScrollableScrollPhysics(),
-          child: SizedBox(
-            width: chartWidth,
-            height: 195,
-            child: LineChart(
-              key: ValueKey('daily_area_zoom_$_zoomLevel'),
-              LineChartData(
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: isZoomed,
-                  verticalInterval: 1.0,
-                  horizontalInterval: yInterval,
-                  getDrawingHorizontalLine: (value) => FlLine(
-                    color: AppTheme.border.withOpacity(0.5),
-                    strokeWidth: 1,
-                    dashArray: [4, 4],
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 1. Sticky Fixed Left Y-Axis (stays static on screen!)
+            SizedBox(
+              width: yAxisWidth,
+              height: 165,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    maxVal >= 1000 ? '${(maxVal / 1000).toStringAsFixed(1)}k' : '${(maxVal * 1.25).round()}',
+                    style: const TextStyle(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
                   ),
-                  getDrawingVerticalLine: (value) => FlLine(
-                    color: AppTheme.border.withOpacity(0.2),
-                    strokeWidth: 1,
+                  Text(
+                    maxVal >= 1000 ? '${((maxVal * 2 / 3) / 1000).toStringAsFixed(1)}k' : '${(maxVal * 2 / 3).round()}',
+                    style: const TextStyle(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
                   ),
-                ),
-                titlesData: FlTitlesData(
-                  show: true,
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 34,
-                      interval: yInterval,
-                      getTitlesWidget: (value, meta) {
-                        if (value == 0) return const SizedBox();
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 6),
-                          child: Text(
-                            value >= 1000
-                                ? '${(value / 1000).toStringAsFixed(1)}k'
-                                : value.round().toString(),
-                            textAlign: TextAlign.right,
-                            style: const TextStyle(
-                              fontSize: 10,
-                              color: AppTheme.textMuted,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+                  Text(
+                    maxVal >= 1000 ? '${((maxVal / 3) / 1000).toStringAsFixed(1)}k' : '${(maxVal / 3).round()}',
+                    style: const TextStyle(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
                   ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      // When zoomed, interval is 1.0 (EVERY SINGLE DAY 1, 2, 3, 4, 5... is shown!)
-                      interval: isZoomed ? 1.0 : (points.length / 5).clamp(1, 10).toDouble(),
-                      getTitlesWidget: (value, meta) {
-                        final idx = value.toInt();
-                        if (idx < 0 || idx >= points.length) return const SizedBox();
-                        final p = points[idx];
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 8.0),
-                          child: Text(
-                            isZoomed ? p.shortLabel : p.label,
-                            style: TextStyle(
-                              fontSize: isZoomed ? 11 : 10,
-                              color: p.hasActualReading ? AppTheme.accent : AppTheme.textSecondary,
-                              fontWeight: p.hasActualReading || isZoomed ? FontWeight.w700 : FontWeight.w500,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                ),
-                borderData: FlBorderData(show: false),
-                lineTouchData: LineTouchData(
-                  enabled: true,
-                  touchCallback: (event, response) {
-                    if (response?.lineBarSpots != null && response!.lineBarSpots!.isNotEmpty) {
-                      final spot = response.lineBarSpots!.first;
-                      final idx = spot.x.toInt();
-                      if (idx >= 0 && idx < points.length) {
-                        setState(() {
-                          _selectedDailyPoint = points[idx];
-                        });
-                      }
-                    }
-                  },
-                  touchTooltipData: LineTouchTooltipData(
-                    getTooltipItems: (touchedSpots) {
-                      return touchedSpots.map((spot) {
-                        final idx = spot.x.toInt();
-                        if (idx < 0 || idx >= points.length) return null;
-                        final p = points[idx];
-                        return LineTooltipItem(
-                          '${p.label}\n',
-                          const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                          children: [
-                            TextSpan(
-                              text: '${p.units} units',
-                              style: const TextStyle(
-                                color: Color(0xFFFBBF24),
-                                fontWeight: FontWeight.w600,
-                                fontSize: 11,
-                              ),
-                            ),
-                          ],
-                        );
-                      }).toList();
-                    },
-                  ),
-                ),
-                minY: 0,
-                maxY: maxVal * 1.25,
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: points.asMap().entries.map((e) {
-                      return FlSpot(e.key.toDouble(), e.value.units);
-                    }).toList(),
-                    isCurved: true,
-                    color: AppTheme.accent,
-                    barWidth: 3,
-                    isStrokeCapRound: true,
-                    dotData: FlDotData(
-                      show: true,
-                      checkToShowDot: (spot, barData) {
-                        final idx = spot.x.toInt();
-                        if (isZoomed) return true; // Show all dots when zoomed into daily view!
-                        return idx >= 0 && idx < points.length && points[idx].hasActualReading;
-                      },
-                      getDotPainter: (spot, percent, barData, index) {
-                        final idx = spot.x.toInt();
-                        final isActual = idx >= 0 && idx < points.length && points[idx].hasActualReading;
-                        return FlDotCirclePainter(
-                          radius: isActual ? 4.5 : 2.5,
-                          color: isActual ? AppTheme.accent : AppTheme.accent.withOpacity(0.7),
-                          strokeWidth: 2,
-                          strokeColor: Colors.white,
-                        );
-                      },
-                    ),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      gradient: LinearGradient(
-                        colors: [
-                          AppTheme.accent.withOpacity(0.22),
-                          AppTheme.accent.withOpacity(0.0),
-                        ],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                      ),
-                    ),
+                  const Text(
+                    '0',
+                    style: TextStyle(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
                   ),
                 ],
               ),
             ),
-          ),
+
+            const SizedBox(width: 6),
+
+            // 2. Horizontally Scrollable Chart Surface
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                physics: isZoomed
+                    ? const BouncingScrollPhysics()
+                    : const NeverScrollableScrollPhysics(),
+                child: SizedBox(
+                  width: chartContentWidth,
+                  height: 195,
+                  child: LineChart(
+                    key: ValueKey('daily_area_zoom_$_zoomLevel'),
+                    LineChartData(
+                      gridData: FlGridData(
+                        show: true,
+                        drawVerticalLine: isZoomed,
+                        verticalInterval: 1.0,
+                        horizontalInterval: yInterval,
+                        getDrawingHorizontalLine: (value) => FlLine(
+                          color: AppTheme.border.withOpacity(0.5),
+                          strokeWidth: 1,
+                          dashArray: [4, 4],
+                        ),
+                        getDrawingVerticalLine: (value) => FlLine(
+                          color: AppTheme.border.withOpacity(0.2),
+                          strokeWidth: 1,
+                        ),
+                      ),
+                      titlesData: FlTitlesData(
+                        show: true,
+                        leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            interval: isZoomed ? 1.0 : (points.length / 5).clamp(1, 10).toDouble(),
+                            getTitlesWidget: (value, meta) {
+                              final idx = value.toInt();
+                              if (idx < 0 || idx >= points.length) return const SizedBox();
+                              final p = points[idx];
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: Text(
+                                  isZoomed ? p.shortLabel : p.label,
+                                  style: TextStyle(
+                                    fontSize: isZoomed ? 11 : 10,
+                                    color: p.hasActualReading ? AppTheme.accent : AppTheme.textSecondary,
+                                    fontWeight: p.hasActualReading || isZoomed ? FontWeight.w700 : FontWeight.w500,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      ),
+                      borderData: FlBorderData(show: false),
+                      lineTouchData: LineTouchData(
+                        enabled: true,
+                        touchCallback: (event, response) {
+                          if (response?.lineBarSpots != null && response!.lineBarSpots!.isNotEmpty) {
+                            final spot = response.lineBarSpots!.first;
+                            final idx = spot.x.toInt();
+                            if (idx >= 0 && idx < points.length) {
+                              setState(() {
+                                _selectedDailyPoint = points[idx];
+                              });
+                            }
+                          }
+                        },
+                        touchTooltipData: LineTouchTooltipData(
+                          getTooltipItems: (touchedSpots) {
+                            return touchedSpots.map((spot) {
+                              final idx = spot.x.toInt();
+                              if (idx < 0 || idx >= points.length) return null;
+                              final p = points[idx];
+                              return LineTooltipItem(
+                                '${p.label}\n',
+                                const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                                children: [
+                                  TextSpan(
+                                    text: '${p.units} units',
+                                    style: const TextStyle(
+                                      color: Color(0xFFFBBF24),
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }).toList();
+                          },
+                        ),
+                      ),
+                      minY: 0,
+                      maxY: maxVal * 1.25,
+                      lineBarsData: [
+                        LineChartBarData(
+                          spots: points.asMap().entries.map((e) {
+                            return FlSpot(e.key.toDouble(), e.value.units);
+                          }).toList(),
+                          isCurved: true,
+                          color: AppTheme.accent,
+                          barWidth: 3,
+                          isStrokeCapRound: true,
+                          dotData: FlDotData(
+                            show: true,
+                            checkToShowDot: (spot, barData) {
+                              final idx = spot.x.toInt();
+                              if (isZoomed) return true;
+                              return idx >= 0 && idx < points.length && points[idx].hasActualReading;
+                            },
+                            getDotPainter: (spot, percent, barData, index) {
+                              final idx = spot.x.toInt();
+                              final isActual = idx >= 0 && idx < points.length && points[idx].hasActualReading;
+                              return FlDotCirclePainter(
+                                radius: isActual ? 4.5 : 2.5,
+                                color: isActual ? AppTheme.accent : AppTheme.accent.withOpacity(0.7),
+                                strokeWidth: 2,
+                                strokeColor: Colors.white,
+                              );
+                            },
+                          ),
+                          belowBarData: BarAreaData(
+                            show: true,
+                            gradient: LinearGradient(
+                              colors: [
+                                AppTheme.accent.withOpacity(0.22),
+                                AppTheme.accent.withOpacity(0.0),
+                              ],
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         );
       },
     );
   }
 
-  // ─── Monthly Area Chart (with Vertical Y-Axis Units & Soft Grid) ──────
+  // ─── Sticky Y-Axis + Monthly Area Chart ───────────────────────────────
   Widget _buildMonthlyAreaChart(AnalyticsResult stats) {
     if (stats.months.isEmpty) {
       return const Center(
@@ -697,110 +710,128 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
     double maxVal = stats.months.map((m) => m.value).fold(0, (a, b) => a > b ? a : b).toDouble();
     if (maxVal <= 0) maxVal = 100;
     final double yInterval = (maxVal / 3).clamp(1.0, 1000.0);
+    const double yAxisWidth = 28.0;
 
-    return LineChart(
-      key: const ValueKey('monthly_area'),
-      LineChartData(
-        gridData: FlGridData(
-          show: true,
-          drawVerticalLine: false,
-          horizontalInterval: yInterval,
-          getDrawingHorizontalLine: (value) => FlLine(
-            color: AppTheme.border.withOpacity(0.5),
-            strokeWidth: 1,
-            dashArray: [4, 4],
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Sticky Left Y-Axis
+        SizedBox(
+          width: yAxisWidth,
+          height: 165,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                maxVal >= 1000 ? '${(maxVal / 1000).toStringAsFixed(1)}k' : '${(maxVal * 1.25).round()}',
+                style: const TextStyle(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
+              ),
+              Text(
+                maxVal >= 1000 ? '${((maxVal * 2 / 3) / 1000).toStringAsFixed(1)}k' : '${(maxVal * 2 / 3).round()}',
+                style: const TextStyle(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
+              ),
+              Text(
+                maxVal >= 1000 ? '${((maxVal / 3) / 1000).toStringAsFixed(1)}k' : '${(maxVal / 3).round()}',
+                style: const TextStyle(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
+              ),
+              const Text(
+                '0',
+                style: TextStyle(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
+              ),
+            ],
           ),
         ),
-        titlesData: FlTitlesData(
-          show: true,
-          leftTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              reservedSize: 34,
-              interval: yInterval,
-              getTitlesWidget: (value, meta) {
-                if (value == 0) return const SizedBox();
-                return Padding(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: Text(
-                    value >= 1000
-                        ? '${(value / 1000).toStringAsFixed(1)}k'
-                        : value.round().toString(),
-                    textAlign: TextAlign.right,
-                    style: const TextStyle(
-                      fontSize: 10,
-                      color: AppTheme.textMuted,
-                      fontWeight: FontWeight.w600,
+
+        const SizedBox(width: 6),
+
+        Expanded(
+          child: SizedBox(
+            height: 195,
+            child: LineChart(
+              key: const ValueKey('monthly_area'),
+              LineChartData(
+                gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  horizontalInterval: yInterval,
+                  getDrawingHorizontalLine: (value) => FlLine(
+                    color: AppTheme.border.withOpacity(0.5),
+                    strokeWidth: 1,
+                    dashArray: [4, 4],
+                  ),
+                ),
+                titlesData: FlTitlesData(
+                  show: true,
+                  leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) {
+                        if (value.toInt() < 0 || value.toInt() >= stats.months.length) {
+                          return const SizedBox();
+                        }
+                        final monthStr = stats.months[value.toInt()].key;
+                        final label = monthStr.split('-')[1];
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Text(
+                            label,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AppTheme.textSecondary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
-                );
-              },
-            ),
-          ),
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              getTitlesWidget: (value, meta) {
-                if (value.toInt() < 0 || value.toInt() >= stats.months.length) {
-                  return const SizedBox();
-                }
-                final monthStr = stats.months[value.toInt()].key;
-                final label = monthStr.split('-')[1];
-                return Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
-                  child: Text(
-                    label,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: AppTheme.textSecondary,
-                      fontWeight: FontWeight.w500,
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                ),
+                borderData: FlBorderData(show: false),
+                lineTouchData: const LineTouchData(enabled: true),
+                minY: 0,
+                maxY: maxVal * 1.25,
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: stats.months.asMap().entries.map((e) {
+                      return FlSpot(e.key.toDouble(), e.value.value.toDouble());
+                    }).toList(),
+                    isCurved: true,
+                    color: AppTheme.primary,
+                    barWidth: 3,
+                    isStrokeCapRound: true,
+                    dotData: FlDotData(
+                      show: true,
+                      getDotPainter: (spot, percent, barData, index) {
+                        return FlDotCirclePainter(
+                          radius: 4.5,
+                          color: AppTheme.primary,
+                          strokeWidth: 2,
+                          strokeColor: Colors.white,
+                        );
+                      },
+                    ),
+                    belowBarData: BarAreaData(
+                      show: true,
+                      gradient: LinearGradient(
+                        colors: [
+                          AppTheme.primary.withOpacity(0.2),
+                          AppTheme.primary.withOpacity(0.0),
+                        ],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ),
                     ),
                   ),
-                );
-              },
-            ),
-          ),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        ),
-        borderData: FlBorderData(show: false),
-        lineTouchData: const LineTouchData(enabled: true),
-        minY: 0,
-        maxY: maxVal * 1.25,
-        lineBarsData: [
-          LineChartBarData(
-            spots: stats.months.asMap().entries.map((e) {
-              return FlSpot(e.key.toDouble(), e.value.value.toDouble());
-            }).toList(),
-            isCurved: true,
-            color: AppTheme.primary,
-            barWidth: 3,
-            isStrokeCapRound: true,
-            dotData: FlDotData(
-              show: true,
-              getDotPainter: (spot, percent, barData, index) {
-                return FlDotCirclePainter(
-                  radius: 4.5,
-                  color: AppTheme.primary,
-                  strokeWidth: 2,
-                  strokeColor: Colors.white,
-                );
-              },
-            ),
-            belowBarData: BarAreaData(
-              show: true,
-              gradient: LinearGradient(
-                colors: [
-                  AppTheme.primary.withOpacity(0.2),
-                  AppTheme.primary.withOpacity(0.0),
                 ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
               ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
