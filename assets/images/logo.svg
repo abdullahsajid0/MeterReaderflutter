@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Rich Light-Mode Energy Gradient (Optimized for White BG) -->
+    <linearGradient id="wattGradIconLight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1D4ED8" />
+      <stop offset="45%" stop-color="#0284C7" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+
+    <!-- Subtle Container Border -->
+    <linearGradient id="tileBorder" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#F1F5F9" />
+      <stop offset="100%" stop-color="#E2E8F0" />
+    </linearGradient>
+
+    <!-- Soft Depth Shadow for White Canvas -->
+    <filter id="lightDepthShadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#0F172A" flood-opacity="0.12" />
+    </filter>
+  </defs>
+
+  <!-- App Icon Base Container (White Rounded Square) -->
+  <rect x="0" y="0" width="512" height="512" fill="#FFFFFF" />
+  
+  <!-- Subtle Outer Border -->
+  <rect x="2" y="2" width="508" height="508" fill="none" stroke="url(#tileBorder)" stroke-width="3" />
+
+  <!-- Outer Smart Gauge Arc -->
+  <circle 
+    cx="256" 
+    cy="256" 
+    r="160" 
+    fill="none" 
+    stroke="url(#wattGradIconLight)" 
+    stroke-width="16" 
+    stroke-linecap="round" 
+    stroke-dasharray="710 250" 
+    transform="rotate(-125 256 256)" 
+    filter="url(#lightDepthShadow)"
+  />
+
+  <!-- Active Limit Node (High-Contrast Emerald with Inner Spark) -->
+  <circle cx="392" cy="168" r="22" fill="#059669" opacity="0.18" />
+  <circle cx="392" cy="168" r="14" fill="#059669" />
+  <circle cx="392" cy="168" r="6" fill="#FFFFFF" />
+
+  <!-- Centered "W" Monogram with Curved Middle Line -->
+  <path 
+    d="M 158 190 
+       L 200 320 
+       C 220 243, 246 186, 274 172 
+       C 260 223, 272 269, 298 320 
+       L 340 190" 
+    fill="none" 
+    stroke="url(#wattGradIconLight)" 
+    stroke-width="26" 
+    stroke-linecap="round" 
+    stroke-linejoin="round" 
+    filter="url(#lightDepthShadow)"
+  />
+</svg>
