@@ -243,6 +243,12 @@ class WattWiseStore extends ChangeNotifier {
     _persistDismissed();
   }
 
+  void dismissAllAlerts(List<String> keys) {
+    final newDismissed = <String>{...dismissed, ...keys}.toList().take(200).toList();
+    dismissed = newDismissed;
+    _persistDismissed();
+  }
+
   // Selectors
   List<Reading> readingsForMeter(String meterId) {
     var filtered = readings.where((r) => r.meterId == meterId).toList();

@@ -56,32 +56,22 @@ class DashboardScreen extends StatelessWidget {
           );
         }
 
-        // Calculate total cycle consumption across all meters
-        int totalCycleUnits = 0;
-        for (final m in meters) {
-          totalCycleUnits += store.unitsThisCycle(m);
-        }
-
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
           children: [
-            // Top Summary Hero Card
-            _buildTotalUsageHero(context, totalCycleUnits, meters.length),
-            const SizedBox(height: 18),
-            
             // Section Header
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     'Meters (${meters.length})',
                     style: const TextStyle(
-                      fontSize: 16,
+                      fontSize: 17,
                       fontWeight: FontWeight.w700,
                       color: AppTheme.textPrimary,
-                      letterSpacing: -0.2,
+                      letterSpacing: -0.3,
                     ),
                   ),
                   InkWell(
@@ -113,92 +103,6 @@ class DashboardScreen extends StatelessWidget {
           ],
         );
       },
-    );
-  }
-
-  Widget _buildTotalUsageHero(BuildContext context, int totalUnits, int meterCount) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppTheme.primary, Color(0xFF1E293B)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.primary.withOpacity(0.2),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Row(
-                children: [
-                  Icon(LucideIcons.zap, color: Color(0xFFFBBF24), size: 16),
-                  SizedBox(width: 6),
-                  Text(
-                    'TOTAL USAGE THIS CYCLE',
-                    style: TextStyle(
-                      color: Color(0xFF94A3B8),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  '$meterCount ${meterCount == 1 ? 'Meter' : 'Meters'} Active',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(
-                '$totalUnits',
-                style: const TextStyle(
-                  fontSize: 38,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                  letterSpacing: -1.2,
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'units',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Color(0xFF94A3B8),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 }

@@ -133,44 +133,6 @@ class SettingsScreen extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 24),
-              _buildSectionHeader('Billing & Tariff'),
-              const SizedBox(height: 8),
-              _buildGroupedCard(
-                children: [
-                  SwitchListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    secondary: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppTheme.warningLight,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(LucideIcons.shieldCheck, color: AppTheme.warning, size: 20),
-                    ),
-                    title: const Text(
-                      'Protected Consumer Tariff',
-                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                    ),
-                    subtitle: const Text(
-                      'Apply subsidized tier rates under 200 units',
-                      style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
-                    ),
-                    value: store.protectedTariff,
-                    activeColor: AppTheme.accent,
-                    onChanged: (val) {
-                      store.setProtectedTariff(val);
-                      AppToast.show(
-                        context,
-                        message: val
-                            ? 'Protected tariff enabled'
-                            : 'Protected tariff disabled',
-                        type: ToastType.info,
-                      );
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
               _buildSectionHeader('Data Management'),
               const SizedBox(height: 8),
               _buildGroupedCard(
@@ -231,28 +193,55 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 48),
+
+              // Version Section (Prominently styled)
               Center(
                 child: Column(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(10),
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppTheme.primary,
-                        borderRadius: BorderRadius.circular(12),
+                        color: AppTheme.surface,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppTheme.border),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF0F172A).withOpacity(0.04),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
                       ),
-                      child: const Icon(LucideIcons.zap, size: 20, color: Color(0xFFFBBF24)),
+                      child: const Icon(LucideIcons.gauge, size: 24, color: AppTheme.accent),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
                     const Text(
-                      'WattWise v1.0.0',
+                      'WattWise',
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: 15,
                         fontWeight: FontWeight.w700,
                         color: AppTheme.textPrimary,
+                        letterSpacing: -0.3,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppTheme.accentLight,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'Version 1.0.0',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.accent,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
                     const Text(
                       'Electricity meter & billing tracker',
                       style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
@@ -260,7 +249,7 @@ class SettingsScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
             ],
           );
         },
