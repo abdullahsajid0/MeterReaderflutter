@@ -36,7 +36,7 @@ class BillingCycleCard extends StatelessWidget {
         border: Border.all(color: AppTheme.border, width: 1),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withOpacity(0.03),
+            color: const Color(0xFF0F172A).withValues(alpha: 0.03),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),

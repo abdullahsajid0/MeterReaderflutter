@@ -118,7 +118,7 @@ class SettingsScreen extends StatelessWidget {
                       style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
                     ),
                     value: store.remindersEnabled,
-                    activeColor: AppTheme.accent,
+                    activeThumbColor: AppTheme.accent,
                     onChanged: (val) {
                       store.setRemindersEnabled(val);
                       AppToast.show(
@@ -178,7 +178,7 @@ class SettingsScreen extends StatelessWidget {
                         border: Border.all(color: AppTheme.border),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF0F172A).withOpacity(0.04),
+                            color: const Color(0xFF0F172A).withValues(alpha: 0.04),
                             blurRadius: 10,
                             offset: const Offset(0, 3),
                           ),
@@ -251,7 +251,7 @@ class SettingsScreen extends StatelessWidget {
         border: Border.all(color: AppTheme.border, width: 1),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withOpacity(0.03),
+            color: const Color(0xFF0F172A).withValues(alpha: 0.03),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),

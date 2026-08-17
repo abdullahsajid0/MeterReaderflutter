@@ -26,7 +26,7 @@ class DashboardScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(22),
                     decoration: BoxDecoration(
-                      color: AppTheme.accent.withOpacity(0.08),
+                      color: AppTheme.accent.withValues(alpha: 0.08),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(LucideIcons.gauge, size: 44, color: AppTheme.accent),
@@ -169,7 +169,7 @@ class _TactileMeterCardState extends State<_TactileMeterCard> {
           border: Border.all(color: AppTheme.border, width: 1),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF0F172A).withOpacity(0.03),
+              color: const Color(0xFF0F172A).withValues(alpha: 0.03),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -198,7 +198,7 @@ class _TactileMeterCardState extends State<_TactileMeterCard> {
                         width: 42,
                         height: 42,
                         decoration: BoxDecoration(
-                          color: AppTheme.accent.withOpacity(0.1),
+                          color: AppTheme.accent.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(13),
                         ),
                         child: const Icon(LucideIcons.gauge, size: 20, color: AppTheme.accent),

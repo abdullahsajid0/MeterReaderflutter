@@ -61,7 +61,7 @@ class AlertsScreen extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
-                            color: AppTheme.success.withOpacity(0.08),
+                            color: AppTheme.success.withValues(alpha: 0.08),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(LucideIcons.checkCheck, size: 44, color: AppTheme.success),
@@ -144,7 +144,7 @@ class AlertsScreen extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppTheme.dangerLight,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppTheme.danger.withOpacity(0.3)),
+          border: Border.all(color: AppTheme.danger.withValues(alpha: 0.3)),
         ),
         child: const Icon(LucideIcons.trash2, color: AppTheme.danger, size: 20),
       ),
@@ -156,7 +156,7 @@ class AlertsScreen extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppTheme.dangerLight,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppTheme.danger.withOpacity(0.3)),
+          border: Border.all(color: AppTheme.danger.withValues(alpha: 0.3)),
         ),
         child: const Icon(LucideIcons.trash2, color: AppTheme.danger, size: 20),
       ),
@@ -168,7 +168,7 @@ class AlertsScreen extends StatelessWidget {
           border: Border.all(color: AppTheme.border, width: 1),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF0F172A).withOpacity(0.03),
+              color: const Color(0xFF0F172A).withValues(alpha: 0.03),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),

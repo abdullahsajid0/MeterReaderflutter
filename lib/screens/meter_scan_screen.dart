@@ -118,8 +118,11 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
             'This image could not be cropped. Please try another photo.');
         return;
       }
+      if (!mounted) return;
       final store = context.read<WattWiseStore>();
-      final meter = store.meters.firstWhere((m) => m.id == widget.meterId);
+      final meterMatches = store.meters.where((m) => m.id == widget.meterId);
+      if (meterMatches.isEmpty) return;
+      final meter = meterMatches.first;
       final baseline = store.billFor(meter.id)?.currentReading ??
           store.latestReading(meter.id)?.currentReading;
       final readings = <int>[];
@@ -581,7 +584,7 @@ class _ActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: enabled ? color.withOpacity(0.08) : AppTheme.border.withOpacity(0.3),
+      color: enabled ? color.withValues(alpha: 0.08) : AppTheme.border.withValues(alpha: 0.3),
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: enabled ? onPressed : null,
@@ -591,7 +594,7 @@ class _ActionButton extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: enabled ? color.withOpacity(0.3) : AppTheme.border,
+              color: enabled ? color.withValues(alpha: 0.3) : AppTheme.border,
               width: 1.5,
             ),
           ),
@@ -603,7 +606,7 @@ class _ActionButton extends StatelessWidget {
               Icon(
                 icon,
                 size: 24,
-                color: enabled ? color : AppTheme.textSecondary.withOpacity(0.5),
+                color: enabled ? color : AppTheme.textSecondary.withValues(alpha: 0.5),
               ),
               const SizedBox(height: 6),
               Text(
@@ -612,7 +615,7 @@ class _ActionButton extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: enabled ? color : AppTheme.textSecondary.withOpacity(0.5),
+                  color: enabled ? color : AppTheme.textSecondary.withValues(alpha: 0.5),
                 ),
               ),
             ],
@@ -630,7 +633,7 @@ class _GuidePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.black.withOpacity(0.42);
+    final paint = Paint()..color = Colors.black.withValues(alpha: 0.42);
     final guide = Rect.fromLTWH(
         size.width * region.left,
         size.height * region.top,
@@ -651,7 +654,8 @@ class _GuidePainter extends CustomPainter {
 }
 
 String _cameraMessage(CameraException error) {
-  if (error.code == 'CameraAccessDenied')
+  if (error.code == 'CameraAccessDenied') {
     return 'Camera permission was denied. Upload a photo or type the reading.';
+  }
   return 'Camera is unavailable. Upload a photo or type the reading.';
 }

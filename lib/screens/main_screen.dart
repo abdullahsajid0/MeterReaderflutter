@@ -91,7 +91,7 @@ class _MainScreenState extends State<MainScreen> {
           ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF0F172A).withOpacity(0.04),
+              color: const Color(0xFF0F172A).withValues(alpha: 0.04),
               blurRadius: 10,
               offset: const Offset(0, -2),
             ),
@@ -100,7 +100,7 @@ class _MainScreenState extends State<MainScreen> {
         child: NavigationBar(
           selectedIndex: _currentIndex,
           backgroundColor: AppTheme.surface,
-          indicatorColor: AppTheme.accent.withOpacity(0.12),
+          indicatorColor: AppTheme.accent.withValues(alpha: 0.12),
           elevation: 0,
           height: 64,
           onDestinationSelected: (index) {

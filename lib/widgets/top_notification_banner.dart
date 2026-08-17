@@ -122,7 +122,7 @@ class _TopBannerWidgetState extends State<_TopBannerWidget>
         position: _offsetAnimation,
         child: Material(
           elevation: 12,
-          shadowColor: Colors.black.withOpacity(0.3),
+          shadowColor: Colors.black.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(20),
           color: widget.bgColor,
           child: InkWell(
@@ -132,14 +132,14 @@ class _TopBannerWidgetState extends State<_TopBannerWidget>
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: widget.iconColor.withOpacity(0.4), width: 1.5),
+                border: Border.all(color: widget.iconColor.withValues(alpha: 0.4), width: 1.5),
               ),
               child: Row(
                 children: [
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: widget.iconColor.withOpacity(0.18),
+                      color: widget.iconColor.withValues(alpha: 0.18),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(widget.icon, color: widget.iconColor, size: 22),
@@ -164,7 +164,7 @@ class _TopBannerWidgetState extends State<_TopBannerWidget>
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.85),
+                            color: Colors.white.withValues(alpha: 0.85),
                             fontSize: 13,
                           ),
                         ),
@@ -174,7 +174,7 @@ class _TopBannerWidgetState extends State<_TopBannerWidget>
                   IconButton(
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
-                    icon: Icon(LucideIcons.x, color: Colors.white.withOpacity(0.6), size: 18),
+                    icon: Icon(LucideIcons.x, color: Colors.white.withValues(alpha: 0.6), size: 18),
                     onPressed: _dismiss,
                   ),
                 ],

@@ -6,14 +6,14 @@ import 'package:intl/intl.dart';
 import '../models/wattwise_types.dart';
 import '../services/wattwise_billing.dart';
 
-const String METERS_KEY = "wattwise.meters.v2";
-const String READINGS_KEY = "wattwise.readings.v2";
-const String BILLS_KEY = "wattwise.bills.v2";
-const String DISMISS_KEY = "wattwise.dismissed.v2";
+const String _metersKey = "wattwise.meters.v2";
+const String _readingsKey = "wattwise.readings.v2";
+const String _billsKey = "wattwise.bills.v2";
+const String _dismissKey = "wattwise.dismissed.v2";
 
-const String PROVIDER_KEY = "wattwise.provider.v2";
-const String REMINDERS_KEY = "wattwise.reminders.v2";
-const String TARIFF_KEY = "wattwise.tariff.v2";
+const String _providerKey = "wattwise.provider.v2";
+const String _remindersKey = "wattwise.reminders.v2";
+const String _tariffKey = "wattwise.tariff.v2";
 
 class WattWiseStore extends ChangeNotifier {
   List<Meter> meters = [];
@@ -36,21 +36,21 @@ class WattWiseStore extends ChangeNotifier {
     if (_hydrated) return;
     final prefs = await SharedPreferences.getInstance();
 
-    final metersJson = prefs.getStringList(METERS_KEY) ?? [];
+    final metersJson = prefs.getStringList(_metersKey) ?? [];
     meters = metersJson.map((e) => Meter.fromJson(jsonDecode(e))).toList();
 
-    final readingsJson = prefs.getStringList(READINGS_KEY) ?? [];
+    final readingsJson = prefs.getStringList(_readingsKey) ?? [];
     readings =
         readingsJson.map((e) => Reading.fromJson(jsonDecode(e))).toList();
 
-    final billsJson = prefs.getStringList(BILLS_KEY) ?? [];
+    final billsJson = prefs.getStringList(_billsKey) ?? [];
     bills = billsJson.map((e) => BillInfo.fromJson(jsonDecode(e))).toList();
 
-    dismissed = prefs.getStringList(DISMISS_KEY) ?? [];
+    dismissed = prefs.getStringList(_dismissKey) ?? [];
 
-    defaultCompany = prefs.getString(PROVIDER_KEY) ?? 'LESCO';
-    remindersEnabled = prefs.getBool(REMINDERS_KEY) ?? true;
-    protectedTariff = prefs.getBool(TARIFF_KEY) ?? false;
+    defaultCompany = prefs.getString(_providerKey) ?? 'LESCO';
+    remindersEnabled = prefs.getBool(_remindersKey) ?? true;
+    protectedTariff = prefs.getBool(_tariffKey) ?? false;
 
     _hydrated = true;
     notifyListeners();
@@ -59,48 +59,48 @@ class WattWiseStore extends ChangeNotifier {
   Future<void> _persistMeters() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setStringList(
-        METERS_KEY, meters.map((e) => jsonEncode(e.toJson())).toList());
+        _metersKey, meters.map((e) => jsonEncode(e.toJson())).toList());
     notifyListeners();
   }
 
   Future<void> _persistReadings() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setStringList(
-        READINGS_KEY, readings.map((e) => jsonEncode(e.toJson())).toList());
+        _readingsKey, readings.map((e) => jsonEncode(e.toJson())).toList());
     notifyListeners();
   }
 
   Future<void> _persistBills() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setStringList(
-        BILLS_KEY, bills.map((e) => jsonEncode(e.toJson())).toList());
+        _billsKey, bills.map((e) => jsonEncode(e.toJson())).toList());
     notifyListeners();
   }
 
   Future<void> _persistDismissed() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(DISMISS_KEY, dismissed);
+    await prefs.setStringList(_dismissKey, dismissed);
     notifyListeners();
   }
 
   Future<void> setDefaultCompany(String company) async {
     defaultCompany = company;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(PROVIDER_KEY, company);
+    await prefs.setString(_providerKey, company);
     notifyListeners();
   }
 
   Future<void> setRemindersEnabled(bool enabled) async {
     remindersEnabled = enabled;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(REMINDERS_KEY, enabled);
+    await prefs.setBool(_remindersKey, enabled);
     notifyListeners();
   }
 
   Future<void> setProtectedTariff(bool protected) async {
     protectedTariff = protected;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(TARIFF_KEY, protected);
+    await prefs.setBool(_tariffKey, protected);
     notifyListeners();
   }
 

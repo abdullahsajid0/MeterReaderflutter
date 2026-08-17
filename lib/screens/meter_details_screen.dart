@@ -33,8 +33,13 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
   Widget build(BuildContext context) {
     return Consumer<WattWiseStore>(
       builder: (context, store, child) {
-        final meter = store.meters.firstWhere((m) => m.id == widget.meterId,
-            orElse: () => throw Exception('Meter not found'));
+        final meterMatches = store.meters.where((m) => m.id == widget.meterId);
+        if (meterMatches.isEmpty) {
+          return const Scaffold(
+            body: SizedBox.shrink(),
+          );
+        }
+        final meter = meterMatches.first;
         final readings = store.readingsForMeter(meter.id);
         final cycle = cycleFor(meter);
         final used = store.unitsThisCycle(meter);
@@ -212,7 +217,7 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
         border: Border.all(color: AppTheme.border, width: 1),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withOpacity(0.03),
+            color: const Color(0xFF0F172A).withValues(alpha: 0.03),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -280,7 +285,7 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
         border: Border.all(color: AppTheme.border, width: 1),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withOpacity(0.03),
+            color: const Color(0xFF0F172A).withValues(alpha: 0.03),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -380,9 +385,9 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: AppTheme.accent.withOpacity(0.06),
+                color: AppTheme.accent.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppTheme.accent.withOpacity(0.2)),
+                border: Border.all(color: AppTheme.accent.withValues(alpha: 0.2)),
               ),
               child: Row(
                 children: [
@@ -449,7 +454,7 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
           boxShadow: isActive
               ? [
                   BoxShadow(
-                    color: const Color(0xFF0F172A).withOpacity(0.06),
+                    color: const Color(0xFF0F172A).withValues(alpha: 0.06),
                     blurRadius: 4,
                     offset: const Offset(0, 1),
                   )
@@ -567,12 +572,12 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
                         verticalInterval: 1.0,
                         horizontalInterval: yInterval,
                         getDrawingHorizontalLine: (value) => FlLine(
-                          color: AppTheme.border.withOpacity(0.5),
+                          color: AppTheme.border.withValues(alpha: 0.5),
                           strokeWidth: 1,
                           dashArray: [4, 4],
                         ),
                         getDrawingVerticalLine: (value) => FlLine(
-                          color: AppTheme.border.withOpacity(0.2),
+                          color: AppTheme.border.withValues(alpha: 0.2),
                           strokeWidth: 1,
                         ),
                       ),
@@ -669,7 +674,7 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
                               final isActual = idx >= 0 && idx < points.length && points[idx].hasActualReading;
                               return FlDotCirclePainter(
                                 radius: isActual ? 4.5 : 2.5,
-                                color: isActual ? AppTheme.accent : AppTheme.accent.withOpacity(0.7),
+                                color: isActual ? AppTheme.accent : AppTheme.accent.withValues(alpha: 0.7),
                                 strokeWidth: 2,
                                 strokeColor: Colors.white,
                               );
@@ -679,8 +684,8 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
                             show: true,
                             gradient: LinearGradient(
                               colors: [
-                                AppTheme.accent.withOpacity(0.22),
-                                AppTheme.accent.withOpacity(0.0),
+                                AppTheme.accent.withValues(alpha: 0.22),
+                                AppTheme.accent.withValues(alpha: 0.0),
                               ],
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
@@ -756,7 +761,7 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
                   drawVerticalLine: false,
                   horizontalInterval: yInterval,
                   getDrawingHorizontalLine: (value) => FlLine(
-                    color: AppTheme.border.withOpacity(0.5),
+                    color: AppTheme.border.withValues(alpha: 0.5),
                     strokeWidth: 1,
                     dashArray: [4, 4],
                   ),
@@ -818,8 +823,8 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
                       show: true,
                       gradient: LinearGradient(
                         colors: [
-                          AppTheme.primary.withOpacity(0.2),
-                          AppTheme.primary.withOpacity(0.0),
+                          AppTheme.primary.withValues(alpha: 0.2),
+                          AppTheme.primary.withValues(alpha: 0.0),
                         ],
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
@@ -887,7 +892,7 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppTheme.primary.withOpacity(0.06),
+                  color: AppTheme.primary.withValues(alpha: 0.06),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(LucideIcons.activity, color: AppTheme.primary, size: 18),
@@ -1062,7 +1067,7 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
         border: Border.all(color: AppTheme.border, width: 1),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withOpacity(0.03),
+            color: const Color(0xFF0F172A).withValues(alpha: 0.03),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -1249,11 +1254,11 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.danger),
             onPressed: () {
-              store.deleteMeter(meter.id);
               Navigator.of(dialogContext).pop();
               if (context.mounted) {
                 context.pop();
               }
+              store.deleteMeter(meter.id);
             },
             child: const Text('Delete'),
           ),
