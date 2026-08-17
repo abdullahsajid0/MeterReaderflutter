@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:go_router/go_router.dart';
 import '../store/wattwise_store.dart';
 import '../theme/app_theme.dart';
 import '../services/wattwise_billing.dart';
@@ -16,16 +17,40 @@ class InsightsScreen extends StatelessWidget {
         final meters = store.meters;
         if (meters.isEmpty) {
           return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(LucideIcons.barChart2, size: 64, color: AppTheme.border),
-                const SizedBox(height: 16),
-                Text('No Data Available', style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 8),
-                const Text('Add meters to see insights and analytics.',
-                    style: TextStyle(color: AppTheme.textSecondary)),
-              ],
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: AppTheme.accent.withOpacity(0.08),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(LucideIcons.trendingUp, size: 44, color: AppTheme.accent),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'No meters added',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Add meters to see consumption trends and daily target pacing.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: AppTheme.textSecondary, height: 1.45),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    icon: const Icon(LucideIcons.plus, size: 18),
+                    label: const Text('Add Meter'),
+                    onPressed: () => context.push('/meters/new'),
+                  ),
+                ],
+              ),
             ),
           );
         }
@@ -58,14 +83,10 @@ class InsightsScreen extends StatelessWidget {
             : 0;
 
         return ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
           children: [
-            Text('Summary Overview',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
+            _buildSectionTitle(context, 'Overview'),
+            const SizedBox(height: 10),
             _buildStatCard(
               context,
               title: 'Total Units Consumed',
@@ -90,23 +111,23 @@ class InsightsScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Expanded(
-                    child: _buildStatCard(
+                    child: _buildMiniStatCard(
                       context,
                       title: 'Active Meters',
                       value: '${meters.length}',
-                      subtitle: 'Monitored',
+                      subtitle: 'Tracked',
                       icon: LucideIcons.home,
                       color: AppTheme.primary,
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _buildStatCard(
+                    child: _buildMiniStatCard(
                       context,
-                      title: 'Over Limit',
+                      title: 'Over Target',
                       value: '$overLimitCount',
-                      subtitle: overLimitCount > 0 ? 'Action required' : 'Normal',
-                      icon: LucideIcons.alertTriangle,
+                      subtitle: overLimitCount > 0 ? 'Exceeded' : 'On track',
+                      icon: overLimitCount > 0 ? LucideIcons.alertTriangle : LucideIcons.checkCircle2,
                       color: overLimitCount > 0 ? AppTheme.danger : AppTheme.success,
                     ),
                   ),
@@ -114,24 +135,30 @@ class InsightsScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-            Text('Consumption Visual Trend',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
+            _buildSectionTitle(context, 'Usage by Meter'),
+            const SizedBox(height: 10),
             _buildConsumptionGraph(context, meters, store),
             const SizedBox(height: 24),
-            Text('Meter Breakdown & Targets',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
+            _buildSectionTitle(context, 'Meter Breakdown'),
+            const SizedBox(height: 10),
             ...meters.map((m) => _buildMeterInsightCard(context, m, store)),
           ],
         );
       },
+    );
+  }
+
+  Widget _buildSectionTitle(BuildContext context, String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Text(
+        title,
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: AppTheme.textPrimary,
+              letterSpacing: -0.2,
+            ),
+      ),
     );
   }
 
@@ -140,87 +167,199 @@ class InsightsScreen extends StatelessWidget {
     required int remainingUnits,
     required int daysLeft,
   }) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppTheme.success.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(LucideIcons.target, color: AppTheme.success, size: 24),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.border, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withOpacity(0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppTheme.successLight,
+              borderRadius: BorderRadius.circular(14),
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Recommended Daily Target',
-                      style: TextStyle(fontSize: 12, color: AppTheme.textSecondary, fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 2),
-                  Text('~$targetPerDay units/day',
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.success)),
-                  const SizedBox(height: 2),
-                  Text('Pacing for $remainingUnits remaining units across ~$daysLeft days',
-                      style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
-                ],
-              ),
+            child: const Icon(LucideIcons.target, color: AppTheme.success, size: 24),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Daily Pacing Target',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '~$targetPerDay units/day',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.success,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '$remainingUnits units remaining across $daysLeft days',
+                  style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildStatCard(BuildContext context, {
+  Widget _buildStatCard(
+    BuildContext context, {
     required String title,
     required String value,
     String? subtitle,
     required IconData icon,
     required Color color,
   }) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                Icon(icon, color: color, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          color: AppTheme.textSecondary, fontWeight: FontWeight.w500)),
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.border, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withOpacity(0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-              ],
+                child: Icon(icon, color: color, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                title,
+                style: const TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.textPrimary,
+              letterSpacing: -0.8,
             ),
-            const SizedBox(height: 12),
-            Text(value,
-                style: Theme.of(context)
-                    .textTheme
-                    .displaySmall
-                    ?.copyWith(color: AppTheme.textPrimary, fontWeight: FontWeight.bold)),
-            if (subtitle != null) ...[
-              const SizedBox(height: 4),
-              Text(subtitle,
-                  style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
-            ]
-          ],
-        ),
+          ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+            ),
+          ]
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMiniStatCard(
+    BuildContext context, {
+    required String title,
+    required String value,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.border, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withOpacity(0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: color, size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.textPrimary,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            subtitle,
+            style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildConsumptionGraph(BuildContext context, List<Meter> meters, WattWiseStore store) {
-    // Generate data per meter for graph
     final List<MapEntry<String, int>> data = [];
     int maxVal = 10;
     for (var m in meters) {
@@ -229,57 +368,86 @@ class InsightsScreen extends StatelessWidget {
       if (used > maxVal) maxVal = used;
     }
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Current Cycle Usage', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                Icon(LucideIcons.barChart2, size: 18, color: AppTheme.textSecondary),
-              ],
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              height: 140,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: data.map((e) {
-                  final double pct = (e.value / maxVal).clamp(0.08, 1.0);
-                  return Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Text('${e.value}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                      const SizedBox(height: 6),
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 500),
-                        width: 32,
-                        height: 90 * pct,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [AppTheme.accent, AppTheme.accentGradient],
-                            begin: Alignment.bottomCenter,
-                            end: Alignment.topCenter,
-                          ),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        e.key.length > 8 ? '${e.key.substring(0, 7)}…' : e.key,
-                        style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
-                      ),
-                    ],
-                  );
-                }).toList(),
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.border, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withOpacity(0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Current Cycle Usage',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                  color: AppTheme.textPrimary,
+                ),
               ),
+              Icon(LucideIcons.trendingUp, size: 18, color: AppTheme.textMuted),
+            ],
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            height: 140,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: data.map((e) {
+                final double pct = (e.value / maxVal).clamp(0.08, 1.0);
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text(
+                      '${e.value}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 400),
+                      curve: Curves.easeOutCubic,
+                      width: 28,
+                      height: 90 * pct,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [AppTheme.accent, Color(0xFF60A5FA)],
+                          begin: Alignment.bottomCenter,
+                          end: Alignment.topCenter,
+                        ),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      e.key.length > 8 ? '${e.key.substring(0, 7)}…' : e.key,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppTheme.textSecondary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                );
+              }).toList(),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -305,68 +473,105 @@ class InsightsScreen extends StatelessWidget {
       }
     } else {
       int avgPerDay = daysElapsed > 0 ? (used / daysElapsed).round() : 0;
-      pacingText = 'Avg: ~$avgPerDay units/day';
+      pacingText = 'Average: ~$avgPerDay units/day';
     }
 
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primary.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Icon(LucideIcons.gauge, color: AppTheme.primary),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.border, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withOpacity(0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppTheme.primary.withOpacity(0.06),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(m.nickname, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      Text('${cycle.daysRemaining} days remaining in cycle',
-                          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
-                    ],
-                  ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                child: const Icon(LucideIcons.gauge, color: AppTheme.primary, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('$used units',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.accent)),
-                    if (m.monthlyLimit != null)
-                      Text('Limit: ${m.monthlyLimit}',
-                          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                    Text(
+                      m.nickname,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      '${cycle.daysRemaining} days left in cycle',
+                      style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                    ),
                   ],
-                )
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '$used units',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                      color: AppTheme.accent,
+                    ),
+                  ),
+                  if (m.monthlyLimit != null)
+                    Text(
+                      'Limit: ${m.monthlyLimit}',
+                      style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11),
+                    ),
+                ],
+              )
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: pacingColor.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  m.monthlyLimit != null ? LucideIcons.target : LucideIcons.activity,
+                  size: 13,
+                  color: pacingColor,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  pacingText,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: pacingColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ],
             ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: pacingColor.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  Icon(m.monthlyLimit != null ? LucideIcons.target : LucideIcons.activity,
-                      size: 14, color: pacingColor),
-                  const SizedBox(width: 6),
-                  Text(pacingText,
-                      style: TextStyle(fontSize: 12, color: pacingColor, fontWeight: FontWeight.bold)),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

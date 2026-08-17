@@ -26,9 +26,16 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_currentIndex == 0 ? 'WattWise' : 'Insights'),
+        title: Text(
+          _currentIndex == 0 ? 'WattWise' : 'Insights',
+          style: const TextStyle(
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.4,
+          ),
+        ),
         leading: IconButton(
-          icon: const Icon(LucideIcons.settings),
+          icon: const Icon(LucideIcons.slidersHorizontal, size: 20),
+          tooltip: 'Settings',
           onPressed: () => context.push('/settings'),
         ),
         actions: [
@@ -39,25 +46,27 @@ class _MainScreenState extends State<MainScreen> {
                 alignment: Alignment.center,
                 children: [
                   IconButton(
-                    icon: const Icon(LucideIcons.bell),
+                    icon: const Icon(LucideIcons.bell, size: 20),
+                    tooltip: 'Notifications',
                     onPressed: () => context.push('/alerts'),
                   ),
                   if (alerts.isNotEmpty)
                     Positioned(
-                      right: 12,
-                      top: 12,
+                      right: 10,
+                      top: 10,
                       child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                        decoration: BoxDecoration(
                           color: AppTheme.danger,
-                          shape: BoxShape.circle,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppTheme.surface, width: 1.5),
                         ),
                         child: Text(
                           '${alerts.length}',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 10,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ),
@@ -68,27 +77,50 @@ class _MainScreenState extends State<MainScreen> {
           ),
         ],
       ),
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _pages,
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 250),
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeInCubic,
+        child: _pages[_currentIndex],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(LucideIcons.home),
-            label: 'Home',
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: AppTheme.surface,
+          border: const Border(
+            top: BorderSide(color: AppTheme.border, width: 0.8),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(LucideIcons.barChart2),
-            label: 'Insights',
-          ),
-        ],
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF0F172A).withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: NavigationBar(
+          selectedIndex: _currentIndex,
+          backgroundColor: AppTheme.surface,
+          indicatorColor: AppTheme.accent.withOpacity(0.12),
+          elevation: 0,
+          height: 64,
+          onDestinationSelected: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+          },
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(LucideIcons.gauge, size: 22, color: AppTheme.textSecondary),
+              selectedIcon: Icon(LucideIcons.gauge, size: 22, color: AppTheme.accent),
+              label: 'Meters',
+            ),
+            NavigationDestination(
+              icon: Icon(LucideIcons.trendingUp, size: 22, color: AppTheme.textSecondary),
+              selectedIcon: Icon(LucideIcons.trendingUp, size: 22, color: AppTheme.accent),
+              label: 'Insights',
+            ),
+          ],
+        ),
       ),
     );
   }

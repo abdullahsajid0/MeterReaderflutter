@@ -18,72 +18,228 @@ class DashboardScreen extends StatelessWidget {
 
         if (meters.isEmpty) {
           return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(LucideIcons.zap, size: 64, color: AppTheme.border),
-                const SizedBox(height: 16),
-                Text('No meters yet',
-                    style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 8),
-                const Text('Add your first electricity meter to get started.',
-                    style: TextStyle(color: AppTheme.textSecondary)),
-                const SizedBox(height: 24),
-                ElevatedButton.icon(
-                  icon: const Icon(LucideIcons.plus),
-                  label: const Text('Add Meter'),
-                  onPressed: () => context.push('/meters/new'),
-                ),
-              ],
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(22),
+                    decoration: BoxDecoration(
+                      color: AppTheme.accent.withOpacity(0.08),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(LucideIcons.gauge, size: 44, color: AppTheme.accent),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'No meters added',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Add an electricity meter to track consumption, billing cycles, and targets.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: AppTheme.textSecondary, height: 1.45),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    icon: const Icon(LucideIcons.plus, size: 18),
+                    label: const Text('Add Meter'),
+                    onPressed: () => context.push('/meters/new'),
+                  ),
+                ],
+              ),
             ),
           );
         }
 
+        // Calculate total cycle consumption across all meters
+        int totalCycleUnits = 0;
+        for (final m in meters) {
+          totalCycleUnits += store.unitsThisCycle(m);
+        }
+
         return ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Your Meters',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleMedium
-                        ?.copyWith(fontWeight: FontWeight.bold)),
-                TextButton.icon(
-                  icon: const Icon(LucideIcons.plus, size: 16),
-                  label: const Text('Add'),
-                  onPressed: () => context.push('/meters/new'),
-                )
-              ],
+            // Top Summary Hero Card
+            _buildTotalUsageHero(context, totalCycleUnits, meters.length),
+            const SizedBox(height: 18),
+            
+            // Section Header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Meters (${meters.length})',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.textPrimary,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                  InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: () => context.push('/meters/new'),
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      child: Row(
+                        children: [
+                          Icon(LucideIcons.plus, size: 15, color: AppTheme.accent),
+                          SizedBox(width: 4),
+                          Text(
+                            'Add Meter',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.accent,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                ],
+              ),
             ),
             const SizedBox(height: 8),
-            ...meters.map((m) => _buildMeterCard(context, m, store)),
+            ...meters.map((m) => _TactileMeterCard(meter: m, store: store)),
           ],
         );
       },
     );
   }
 
-  Widget _buildMeterCard(BuildContext context, Meter m, WattWiseStore store) {
-    final used = store.unitsThisCycle(m);
+  Widget _buildTotalUsageHero(BuildContext context, int totalUnits, int meterCount) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [AppTheme.primary, Color(0xFF1E293B)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primary.withOpacity(0.2),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Row(
+                children: [
+                  Icon(LucideIcons.zap, color: Color(0xFFFBBF24), size: 16),
+                  SizedBox(width: 6),
+                  Text(
+                    'TOTAL USAGE THIS CYCLE',
+                    style: TextStyle(
+                      color: Color(0xFF94A3B8),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '$meterCount ${meterCount == 1 ? 'Meter' : 'Meters'} Active',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                '$totalUnits',
+                style: const TextStyle(
+                  fontSize: 38,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                  letterSpacing: -1.2,
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'units',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Color(0xFF94A3B8),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Tactile Meter Card with Apple-style press-down response
+class _TactileMeterCard extends StatefulWidget {
+  final Meter meter;
+  final WattWiseStore store;
+
+  const _TactileMeterCard({
+    required this.meter,
+    required this.store,
+  });
+
+  @override
+  State<_TactileMeterCard> createState() => _TactileMeterCardState();
+}
+
+class _TactileMeterCardState extends State<_TactileMeterCard> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final m = widget.meter;
+    final used = widget.store.unitsThisCycle(m);
     final cycle = cycleFor(m);
-    
+
     final daysElapsed = cycle.daysElapsed;
     final remainingDays = cycle.daysRemaining;
-    
+
     double pct = 0;
-    String averageText = "";
-    
+    String pacingLabel = "";
+
     if (m.monthlyLimit != null && m.monthlyLimit! > 0) {
       pct = used / m.monthlyLimit!;
-      int remainingUnits = m.monthlyLimit! - used;
-      if (remainingUnits < 0) remainingUnits = 0;
+      int remainingUnits = (m.monthlyLimit! - used).clamp(0, m.monthlyLimit!);
       int targetPerDay = remainingDays > 0 ? (remainingUnits / remainingDays).round() : 0;
-      averageText = 'Target: ~$targetPerDay units/day';
+      pacingLabel = 'Target: ~$targetPerDay units/day · $remainingUnits remaining';
     } else {
       int avgPerDay = daysElapsed > 0 ? (used / daysElapsed).round() : 0;
-      averageText = 'Avg: ~$avgPerDay units/day';
+      pacingLabel = 'Averaging ~$avgPerDay units/day over $daysElapsed days';
     }
 
     Color progressColor = AppTheme.success;
@@ -92,178 +248,266 @@ class DashboardScreen extends StatelessWidget {
     } else if (pct >= 0.85) {
       progressColor = AppTheme.warning;
     } else if (pct >= 0.6) {
-      progressColor = AppTheme.warning.withOpacity(0.8);
+      progressColor = const Color(0xFFEAB308);
     }
 
-    if (pct > 1.0) pct = 1.0;
+    final clampedPct = pct.clamp(0.0, 1.0);
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: () => context.push('/meters/${m.id}'),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return AnimatedScale(
+      scale: _isPressed ? 0.985 : 1.0,
+      duration: const Duration(milliseconds: 120),
+      curve: Curves.easeOutCubic,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        decoration: BoxDecoration(
+          color: AppTheme.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppTheme.border, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF0F172A).withOpacity(0.03),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onHighlightChanged: (pressed) {
+              setState(() {
+                _isPressed = pressed;
+              });
+            },
+            onTap: () => context.push('/meters/${m.id}'),
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
+                  // Top row: Avatar + Nickname & Meta + Scan action
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: AppTheme.accent.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(13),
+                        ),
+                        child: const Icon(LucideIcons.gauge, size: 20, color: AppTheme.accent),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              m.nickname,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 16,
+                                color: AppTheme.textPrimary,
+                                letterSpacing: -0.2,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.background,
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(color: AppTheme.border),
+                                  ),
+                                  child: Text(
+                                    m.company.toUpperCase(),
+                                    style: const TextStyle(
+                                      color: AppTheme.textSecondary,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  m.referenceNumber,
+                                  style: const TextStyle(
+                                    fontFamily: 'monospace',
+                                    fontSize: 12,
+                                    color: AppTheme.textSecondary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton.filledTonal(
+                        style: IconButton.styleFrom(
+                          backgroundColor: AppTheme.accentLight,
+                          foregroundColor: AppTheme.accent,
+                          padding: const EdgeInsets.all(10),
+                        ),
+                        icon: const Icon(LucideIcons.camera, size: 18),
+                        tooltip: 'Scan meter',
+                        onPressed: () => context.push('/meters/${m.id}/scan'),
+                      )
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Units Consumption Headline
+                  if (m.monthlyLimit != null && m.monthlyLimit! > 0) ...[
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                          textBaseline: TextBaseline.alphabetic,
+                          children: [
+                            Text(
+                              '$used',
+                              style: const TextStyle(
+                                fontSize: 26,
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.textPrimary,
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '/ ${m.monthlyLimit} units',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: AppTheme.textSecondary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          '${(pct * 100).round()}%',
+                          style: TextStyle(
+                            color: progressColor,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(99),
+                      child: LinearProgressIndicator(
+                        value: clampedPct,
+                        backgroundColor: AppTheme.borderLight,
+                        valueColor: AlwaysStoppedAnimation<Color>(progressColor),
+                        minHeight: 6,
+                      ),
+                    ),
+                  ] else ...[
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text(
+                          '$used',
+                          style: const TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.textPrimary,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        const Text(
+                          'units this cycle',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: AppTheme.textSecondary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+
+                  const SizedBox(height: 12),
+
+                  // Pacing Label Pill
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.background,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                     child: Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [AppTheme.primary, Color(0xFF334155)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(14),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppTheme.primary.withOpacity(0.2),
-                                blurRadius: 6,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(LucideIcons.zap, size: 22, color: Colors.amberAccent),
+                        Icon(
+                          m.monthlyLimit != null ? LucideIcons.target : LucideIcons.activity,
+                          size: 14,
+                          color: AppTheme.textSecondary,
                         ),
-                        const SizedBox(width: 14),
+                        const SizedBox(width: 8),
                         Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(m.nickname,
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold, fontSize: 17)),
-                              const SizedBox(height: 2),
-                              Wrap(
-                                spacing: 6,
-                                runSpacing: 4,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: AppTheme.accent.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: Text(
-                                      m.company.toUpperCase(),
-                                      style: const TextStyle(
-                                          color: AppTheme.accent,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 11),
-                                    ),
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: AppTheme.border.withOpacity(0.5),
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Text('REF ',
-                                            style: TextStyle(
-                                                fontSize: 9,
-                                                fontWeight: FontWeight.bold,
-                                                color: AppTheme.textSecondary)),
-                                        Text(
-                                          m.referenceNumber,
-                                          style: const TextStyle(
-                                              fontFamily: 'monospace',
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 11),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
+                          child: Text(
+                            pacingLabel,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppTheme.textSecondary,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  IconButton(
-                    style: IconButton.styleFrom(
-                      backgroundColor: AppTheme.accent.withOpacity(0.1),
-                    ),
-                    icon:
-                        const Icon(LucideIcons.camera, color: AppTheme.accent, size: 20),
-                    onPressed: () => context.push('/meters/${m.id}/scan'),
-                  )
-                ],
-              ),
-              const SizedBox(height: 20),
-              if (m.monthlyLimit != null) ...[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('$used / ${m.monthlyLimit} units',
-                        style: const TextStyle(fontWeight: FontWeight.bold)),
-                    Text('${(pct * 100).round()}%',
+
+                  const SizedBox(height: 12),
+
+                  // Cycle timeline info
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        formatCycle(cycle),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.textSecondary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Text(
+                        '${cycle.daysRemaining} days left',
                         style: TextStyle(
-                            color: progressColor, fontWeight: FontWeight.bold)),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                LinearProgressIndicator(
-                  value: pct,
-                  backgroundColor: AppTheme.border,
-                  valueColor: AlwaysStoppedAnimation<Color>(progressColor),
-                  borderRadius: BorderRadius.circular(4),
-                  minHeight: 8,
-                ),
-                const SizedBox(height: 8),
-              ] else ...[
-                Text('$used units used this cycle',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                const SizedBox(height: 8),
-              ],
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppTheme.surface,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(m.monthlyLimit != null ? LucideIcons.target : LucideIcons.activity, size: 14, color: AppTheme.textSecondary),
-                    const SizedBox(width: 6),
-                    Text(averageText,
-                        style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary, fontWeight: FontWeight.w600)),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(formatCycle(cycle),
-                      style: const TextStyle(
-                          fontSize: 12, color: AppTheme.textSecondary, fontWeight: FontWeight.w500)),
-                  Text('${cycle.daysRemaining} days left',
-                      style: const TextStyle(
-                          fontSize: 12, color: AppTheme.textSecondary, fontWeight: FontWeight.w500)),
+                          fontSize: 12,
+                          color: cycle.daysRemaining <= 3 ? AppTheme.danger : AppTheme.textSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(99),
+                    child: LinearProgressIndicator(
+                      value: (cycle.progressPct / 100).clamp(0.0, 1.0),
+                      backgroundColor: AppTheme.borderLight,
+                      valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.accent),
+                      minHeight: 4,
+                    ),
+                  ),
                 ],
               ),
-              const SizedBox(height: 6),
-              LinearProgressIndicator(
-                value: cycle.progressPct / 100,
-                backgroundColor: AppTheme.border,
-                valueColor:
-                    const AlwaysStoppedAnimation<Color>(AppTheme.accent),
-                minHeight: 4,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ],
+            ),
           ),
         ),
       ),
