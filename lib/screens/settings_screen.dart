@@ -142,35 +142,6 @@ class SettingsScreen extends StatelessWidget {
                     leading: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: AppTheme.accentLight,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(LucideIcons.refreshCw, color: AppTheme.accent, size: 20),
-                    ),
-                    title: const Text(
-                      'Restore Hidden Notifications',
-                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                    ),
-                    subtitle: const Text(
-                      'Un-dismiss all active cycle notifications',
-                      style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
-                    ),
-                    trailing: const Icon(LucideIcons.chevronRight, size: 18, color: AppTheme.textMuted),
-                    onTap: () {
-                      store.dismissed.clear();
-                      AppToast.show(
-                        context,
-                        message: 'All notifications restored',
-                        type: ToastType.success,
-                      );
-                    },
-                  ),
-                  const Divider(height: 1, indent: 56),
-                  ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    leading: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
                         color: AppTheme.dangerLight,
                         borderRadius: BorderRadius.circular(10),
                       ),

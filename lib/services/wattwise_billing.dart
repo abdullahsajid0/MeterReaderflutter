@@ -188,6 +188,85 @@ class AnalyticsResult {
       this.growth);
 }
 
+class DailyUsagePoint {
+  final DateTime date;
+  final String label;
+  final double units;
+  final bool hasActualReading;
+
+  DailyUsagePoint({
+    required this.date,
+    required this.label,
+    required this.units,
+    this.hasActualReading = false,
+  });
+}
+
+List<DailyUsagePoint> computeDailyCycleUsage(List<Reading> readings, Cycle cycle) {
+  if (readings.isEmpty) return [];
+
+  // Sort readings oldest-to-newest
+  final sorted = [...readings];
+  sorted.sort((a, b) => a.scannedAt.compareTo(b.scannedAt));
+
+  Map<String, double> dayUnits = {};
+  Set<String> actualReadingDates = {};
+
+  for (var r in sorted) {
+    final dt = DateTime.tryParse(r.scannedAt);
+    if (dt != null) {
+      actualReadingDates.add(toISODate(dt));
+    }
+  }
+
+  if (sorted.length == 1) {
+    final r = sorted.first;
+    final scanDate = DateTime.tryParse(r.scannedAt) ?? cycle.start;
+    final scanDateStr = toISODate(scanDate);
+    dayUnits[scanDateStr] = r.unitsConsumed.toDouble();
+  } else {
+    for (int i = 1; i < sorted.length; i++) {
+      final prev = sorted[i - 1];
+      final curr = sorted[i];
+      final prevDate = DateTime.tryParse(prev.scannedAt) ?? cycle.start;
+      final currDate = DateTime.tryParse(curr.scannedAt) ?? cycle.end;
+      final delta = (curr.currentReading - prev.currentReading).clamp(0, 999999);
+      final days = daysBetween(prevDate, currDate);
+
+      if (days <= 1) {
+        final key = toISODate(currDate);
+        dayUnits[key] = (dayUnits[key] ?? 0) + delta.toDouble();
+      } else {
+        final perDay = delta / days;
+        for (int d = 1; d <= days; d++) {
+          final dayDt = prevDate.add(Duration(days: d));
+          final key = toISODate(dayDt);
+          dayUnits[key] = (dayUnits[key] ?? 0) + perDay;
+        }
+      }
+    }
+  }
+
+  final today = DateTime.now();
+  final lastDate = today.isBefore(cycle.end) ? today : cycle.end;
+  final totalDays = daysBetween(cycle.start, lastDate) + 1;
+
+  List<DailyUsagePoint> points = [];
+  for (int i = 0; i < totalDays && i < 35; i++) {
+    final d = cycle.start.add(Duration(days: i));
+    final key = toISODate(d);
+    final val = dayUnits[key] ?? 0.0;
+    points.add(DailyUsagePoint(
+      date: d,
+      label: DateFormat('d MMM').format(d),
+      units: val,
+      hasActualReading: actualReadingDates.contains(key),
+    ));
+  }
+
+  return points;
+}
+
 AnalyticsResult analytics(List<Reading> readings) {
   Map<String, int> byMonth = {};
   for (var r in readings) {

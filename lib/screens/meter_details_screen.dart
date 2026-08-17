@@ -21,8 +21,10 @@ class MeterDetailsScreen extends StatefulWidget {
   State<MeterDetailsScreen> createState() => _MeterDetailsScreenState();
 }
 
+enum ChartTimeframe { daily, monthly }
+
 class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
-  bool _showAreaChart = false;
+  ChartTimeframe _timeframe = ChartTimeframe.daily;
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +36,19 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
         final cycle = cycleFor(meter);
         final used = store.unitsThisCycle(meter);
         final stats = analytics(readings);
+        final dailyPoints = computeDailyCycleUsage(readings, cycle);
+
+        // Filter readings for the current cycle
+        final cycleReadings = readings.where((r) {
+          final dt = DateTime.tryParse(r.scannedAt);
+          if (dt != null) {
+            return !dt.isBefore(cycle.start.subtract(const Duration(hours: 12))) &&
+                   !dt.isAfter(cycle.end.add(const Duration(hours: 24)));
+          }
+          return r.billingMonth == cycle.billingMonth;
+        }).toList();
+
+        final isDaily = _timeframe == ChartTimeframe.daily;
 
         return Scaffold(
           appBar: AppBar(
@@ -89,13 +104,16 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
               ),
               const SizedBox(height: 24),
               if (readings.isNotEmpty) ...[
-                _buildSectionHeader('Analytics'),
+                _buildSectionHeader('Consumption Graph'),
                 const SizedBox(height: 10),
-                _buildSwitchableChart(context, stats),
+                _buildAreaUsageCard(context, stats, dailyPoints),
                 const SizedBox(height: 24),
-                _buildSectionHeader('Reading History'),
+                _buildSectionHeader(isDaily ? 'Current Cycle Readings' : 'Monthly History'),
                 const SizedBox(height: 10),
-                ..._buildReadingTiles(context, readings),
+                if (isDaily)
+                  ..._buildCycleReadingTiles(context, cycleReadings)
+                else
+                  ..._buildMonthlyHistoryTiles(context, stats, readings),
                 const SizedBox(height: 16),
               ] else ...[
                 Center(
@@ -118,7 +136,8 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
                         ),
                         const SizedBox(height: 4),
                         const Text(
-                          'Scan your meter to start tracking usage history.',
+                          'Scan your meter to start tracking daily and monthly usage history.',
+                          textAlign: TextAlign.center,
                           style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
                         ),
                       ],
@@ -242,9 +261,13 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
     );
   }
 
-  // ─── Switchable Bar / Area Chart ──────────────────────────────────────
-  Widget _buildSwitchableChart(BuildContext context, AnalyticsResult stats) {
-    if (stats.months.isEmpty) return const SizedBox();
+  // ─── Area Usage Graph (Daily & Monthly) ──────────────────────────────
+  Widget _buildAreaUsageCard(
+    BuildContext context,
+    AnalyticsResult stats,
+    List<DailyUsagePoint> dailyPoints,
+  ) {
+    final isDaily = _timeframe == ChartTimeframe.daily;
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -261,13 +284,19 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Timeframe Selector Pill
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                _showAreaChart ? 'Monthly Trend' : 'Monthly Consumption',
-                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                isDaily ? 'Daily Cycle Trend' : 'Monthly Trend',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                  letterSpacing: -0.2,
+                ),
               ),
               Container(
                 padding: const EdgeInsets.all(3),
@@ -279,29 +308,40 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _chartToggleButton(
-                      icon: LucideIcons.barChart2,
-                      isActive: !_showAreaChart,
-                      onTap: () => setState(() => _showAreaChart = false),
+                    _timeframeTabButton(
+                      title: 'Daily (Cycle)',
+                      isActive: isDaily,
+                      onTap: () => setState(() => _timeframe = ChartTimeframe.daily),
                     ),
-                    _chartToggleButton(
-                      icon: LucideIcons.lineChart,
-                      isActive: _showAreaChart,
-                      onTap: () => setState(() => _showAreaChart = true),
+                    _timeframeTabButton(
+                      title: 'Monthly',
+                      isActive: !isDaily,
+                      onTap: () => setState(() => _timeframe = ChartTimeframe.monthly),
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
+
+          const SizedBox(height: 6),
+
+          Text(
+            isDaily
+                ? 'Units consumed per day based on cycle readings'
+                : 'Aggregated monthly consumption overview',
+            style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+          ),
+
+          const SizedBox(height: 18),
+
           SizedBox(
-            height: 180,
+            height: 190,
             child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              child: _showAreaChart
-                  ? _buildAreaChart(stats)
-                  : _buildBarChart(stats),
+              duration: const Duration(milliseconds: 250),
+              child: isDaily
+                  ? _buildDailyAreaChart(dailyPoints)
+                  : _buildMonthlyAreaChart(stats),
             ),
           ),
         ],
@@ -309,15 +349,15 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
     );
   }
 
-  Widget _chartToggleButton({
-    required IconData icon,
+  Widget _timeframeTabButton({
+    required String title,
     required bool isActive,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
           color: isActive ? AppTheme.surface : Colors.transparent,
           borderRadius: BorderRadius.circular(7),
@@ -331,38 +371,48 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
                 ]
               : null,
         ),
-        child: Icon(
-          icon,
-          size: 16,
-          color: isActive ? AppTheme.accent : AppTheme.textMuted,
+        child: Text(
+          title,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: isActive ? AppTheme.accent : AppTheme.textSecondary,
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildBarChart(AnalyticsResult stats) {
-    return BarChart(
-      key: const ValueKey('bar'),
-      BarChartData(
-        alignment: BarChartAlignment.spaceAround,
-        maxY: (stats.highest?.value ?? 100) * 1.25,
+  // ─── Daily Area Chart ─────────────────────────────────────────────────
+  Widget _buildDailyAreaChart(List<DailyUsagePoint> points) {
+    if (points.isEmpty) {
+      return const Center(
+        child: Text('No daily data available for this cycle', style: TextStyle(color: AppTheme.textMuted)),
+      );
+    }
+
+    double maxVal = points.map((p) => p.units).fold(0.0, (a, b) => a > b ? a : b);
+    if (maxVal <= 0) maxVal = 10;
+
+    return LineChart(
+      key: const ValueKey('daily_area'),
+      LineChartData(
+        gridData: const FlGridData(show: false),
         titlesData: FlTitlesData(
           show: true,
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
+              interval: (points.length / 5).clamp(1, 10).toDouble(),
               getTitlesWidget: (value, meta) {
-                if (value.toInt() < 0 || value.toInt() >= stats.months.length) {
-                  return const SizedBox();
-                }
-                final monthStr = stats.months[value.toInt()].key;
-                final label = monthStr.split('-')[1];
+                final idx = value.toInt();
+                if (idx < 0 || idx >= points.length) return const SizedBox();
                 return Padding(
                   padding: const EdgeInsets.only(top: 8.0),
                   child: Text(
-                    label,
+                    points[idx].label,
                     style: const TextStyle(
-                      fontSize: 11,
+                      fontSize: 10,
                       color: AppTheme.textSecondary,
                       fontWeight: FontWeight.w500,
                     ),
@@ -376,27 +426,60 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
           topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         ),
         borderData: FlBorderData(show: false),
-        gridData: const FlGridData(show: false),
-        barGroups: stats.months.asMap().entries.map((entry) {
-          return BarChartGroupData(
-            x: entry.key,
-            barRods: [
-              BarChartRodData(
-                toY: entry.value.value.toDouble(),
-                color: AppTheme.accent,
-                width: 18,
-                borderRadius: BorderRadius.circular(6),
-              )
-            ],
-          );
-        }).toList(),
+        lineTouchData: const LineTouchData(enabled: true),
+        minY: 0,
+        maxY: maxVal * 1.25,
+        lineBarsData: [
+          LineChartBarData(
+            spots: points.asMap().entries.map((e) {
+              return FlSpot(e.key.toDouble(), e.value.units);
+            }).toList(),
+            isCurved: true,
+            color: AppTheme.accent,
+            barWidth: 3,
+            isStrokeCapRound: true,
+            dotData: FlDotData(
+              show: true,
+              checkToShowDot: (spot, barData) {
+                final idx = spot.x.toInt();
+                return idx >= 0 && idx < points.length && points[idx].hasActualReading;
+              },
+              getDotPainter: (spot, percent, barData, index) {
+                return FlDotCirclePainter(
+                  radius: 4.5,
+                  color: AppTheme.accent,
+                  strokeWidth: 2,
+                  strokeColor: Colors.white,
+                );
+              },
+            ),
+            belowBarData: BarAreaData(
+              show: true,
+              gradient: LinearGradient(
+                colors: [
+                  AppTheme.accent.withOpacity(0.22),
+                  AppTheme.accent.withOpacity(0.0),
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildAreaChart(AnalyticsResult stats) {
+  // ─── Monthly Area Chart ───────────────────────────────────────────────
+  Widget _buildMonthlyAreaChart(AnalyticsResult stats) {
+    if (stats.months.isEmpty) {
+      return const Center(
+        child: Text('No monthly history recorded yet', style: TextStyle(color: AppTheme.textMuted)),
+      );
+    }
+
     return LineChart(
-      key: const ValueKey('area'),
+      key: const ValueKey('monthly_area'),
       LineChartData(
         gridData: const FlGridData(show: false),
         titlesData: FlTitlesData(
@@ -444,7 +527,7 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
               show: true,
               getDotPainter: (spot, percent, barData, index) {
                 return FlDotCirclePainter(
-                  radius: 4,
+                  radius: 4.5,
                   color: AppTheme.primary,
                   strokeWidth: 2,
                   strokeColor: Colors.white,
@@ -468,23 +551,42 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
     );
   }
 
-  // ─── Reading History Tiles (with delta from previous scan) ────────────
-  List<Widget> _buildReadingTiles(BuildContext context, List<Reading> readings) {
+  // ─── Current Cycle Reading Tiles ──────────────────────────────────────
+  List<Widget> _buildCycleReadingTiles(BuildContext context, List<Reading> cycleReadings) {
+    if (cycleReadings.isEmpty) {
+      return [
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppTheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppTheme.border),
+          ),
+          child: const Center(
+            child: Text(
+              'No readings recorded for this active cycle yet.',
+              style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+            ),
+          ),
+        )
+      ];
+    }
+
     final tiles = <Widget>[];
-    for (int i = 0; i < readings.length; i++) {
-      final r = readings[i];
+    for (int i = 0; i < cycleReadings.length; i++) {
+      final r = cycleReadings[i];
       final scannedDate = DateTime.tryParse(r.scannedAt);
       final dateStr = scannedDate != null
           ? DateFormat('d MMM · h:mm a').format(scannedDate.toLocal())
           : r.billingMonth;
 
       String deltaText = '';
-      if (i < readings.length - 1) {
-        final older = readings[i + 1];
+      if (i < cycleReadings.length - 1) {
+        final older = cycleReadings[i + 1];
         final delta = r.currentReading - older.currentReading;
         deltaText = delta >= 0 ? '+$delta units since previous scan' : '$delta units';
       } else {
-        deltaText = 'Initial scan for this cycle';
+        deltaText = 'First scan this cycle';
       }
 
       tiles.add(
@@ -542,6 +644,116 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
                           dateStr,
                           style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
                         ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    return tiles;
+  }
+
+  // ─── Monthly History Tiles ────────────────────────────────────────────
+  List<Widget> _buildMonthlyHistoryTiles(
+    BuildContext context,
+    AnalyticsResult stats,
+    List<Reading> allReadings,
+  ) {
+    if (stats.months.isEmpty) {
+      return [
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppTheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppTheme.border),
+          ),
+          child: const Center(
+            child: Text(
+              'No monthly records available.',
+              style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+            ),
+          ),
+        )
+      ];
+    }
+
+    final tiles = <Widget>[];
+    for (final monthEntry in stats.months.reversed) {
+      final monthKey = monthEntry.key;
+      final totalUnits = monthEntry.value;
+
+      final monthReadings = allReadings.where((r) => r.billingMonth == monthKey).toList();
+      final scanCount = monthReadings.length;
+
+      String monthName = monthKey;
+      try {
+        final parsed = DateFormat('yyyy-MM').parse(monthKey);
+        monthName = DateFormat('MMMM yyyy').format(parsed);
+      } catch (_) {}
+
+      tiles.add(
+        Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppTheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppTheme.border, width: 1),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppTheme.accentLight,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(LucideIcons.calendar, color: AppTheme.accent, size: 18),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          monthName,
+                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                        ),
+                        Text(
+                          '$totalUnits units',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.textPrimary,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '$scanCount scan${scanCount == 1 ? '' : 's'} recorded',
+                          style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                        ),
+                        if (stats.avg > 0)
+                          Text(
+                            totalUnits > stats.avg ? 'Above average' : 'Below average',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: totalUnits > stats.avg ? AppTheme.warning : AppTheme.success,
+                            ),
+                          ),
                       ],
                     ),
                   ],
