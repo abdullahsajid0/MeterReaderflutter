@@ -286,18 +286,21 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Timeframe Selector Pill
+          // Timeframe Selector Row (with Flexible / Expanded to prevent overflow)
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                isDaily ? 'Daily Cycle Trend' : 'Monthly Trend',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 15,
-                  letterSpacing: -0.2,
+              Expanded(
+                child: Text(
+                  isDaily ? 'Daily Trend' : 'Monthly Trend',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                    letterSpacing: -0.2,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.all(3),
                 decoration: BoxDecoration(
@@ -309,7 +312,7 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     _timeframeTabButton(
-                      title: 'Daily (Cycle)',
+                      title: 'Daily',
                       isActive: isDaily,
                       onTap: () => setState(() => _timeframe = ChartTimeframe.daily),
                     ),
@@ -357,7 +360,7 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
         decoration: BoxDecoration(
           color: isActive ? AppTheme.surface : Colors.transparent,
           borderRadius: BorderRadius.circular(7),
@@ -383,7 +386,7 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
     );
   }
 
-  // ─── Daily Area Chart ─────────────────────────────────────────────────
+  // ─── Daily Area Chart (with Vertical Y-Axis Units & Soft Grid) ────────
   Widget _buildDailyAreaChart(List<DailyUsagePoint> points) {
     if (points.isEmpty) {
       return const Center(
@@ -394,12 +397,47 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
     double maxVal = points.map((p) => p.units).fold(0.0, (a, b) => a > b ? a : b);
     if (maxVal <= 0) maxVal = 10;
 
+    final double yInterval = (maxVal / 3).clamp(1.0, 1000.0);
+
     return LineChart(
       key: const ValueKey('daily_area'),
       LineChartData(
-        gridData: const FlGridData(show: false),
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          horizontalInterval: yInterval,
+          getDrawingHorizontalLine: (value) => FlLine(
+            color: AppTheme.border.withOpacity(0.5),
+            strokeWidth: 1,
+            dashArray: [4, 4],
+          ),
+        ),
         titlesData: FlTitlesData(
           show: true,
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 34,
+              interval: yInterval,
+              getTitlesWidget: (value, meta) {
+                if (value == 0) return const SizedBox();
+                return Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: Text(
+                    value >= 1000
+                        ? '${(value / 1000).toStringAsFixed(1)}k'
+                        : value.round().toString(),
+                    textAlign: TextAlign.right,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: AppTheme.textMuted,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
@@ -421,7 +459,6 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
               },
             ),
           ),
-          leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         ),
@@ -470,7 +507,7 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
     );
   }
 
-  // ─── Monthly Area Chart ───────────────────────────────────────────────
+  // ─── Monthly Area Chart (with Vertical Y-Axis Units & Soft Grid) ──────
   Widget _buildMonthlyAreaChart(AnalyticsResult stats) {
     if (stats.months.isEmpty) {
       return const Center(
@@ -478,12 +515,50 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
       );
     }
 
+    double maxVal = stats.months.map((m) => m.value).fold(0, (a, b) => a > b ? a : b).toDouble();
+    if (maxVal <= 0) maxVal = 100;
+
+    final double yInterval = (maxVal / 3).clamp(1.0, 1000.0);
+
     return LineChart(
       key: const ValueKey('monthly_area'),
       LineChartData(
-        gridData: const FlGridData(show: false),
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          horizontalInterval: yInterval,
+          getDrawingHorizontalLine: (value) => FlLine(
+            color: AppTheme.border.withOpacity(0.5),
+            strokeWidth: 1,
+            dashArray: [4, 4],
+          ),
+        ),
         titlesData: FlTitlesData(
           show: true,
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 34,
+              interval: yInterval,
+              getTitlesWidget: (value, meta) {
+                if (value == 0) return const SizedBox();
+                return Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: Text(
+                    value >= 1000
+                        ? '${(value / 1000).toStringAsFixed(1)}k'
+                        : value.round().toString(),
+                    textAlign: TextAlign.right,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: AppTheme.textMuted,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
@@ -507,13 +582,13 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
               },
             ),
           ),
-          leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         ),
         borderData: FlBorderData(show: false),
         lineTouchData: const LineTouchData(enabled: true),
         minY: 0,
+        maxY: maxVal * 1.25,
         lineBarsData: [
           LineChartBarData(
             spots: stats.months.asMap().entries.map((e) {
