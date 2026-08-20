@@ -9,10 +9,12 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/abdullahsajid0/MeterReaderflutter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/abdullahsajid0/MeterReaderflutter/ci.yml?branch=main&style=flat-square&label=CI" alt="CI Status" /></a>
   <a href="https://github.com/abdullahsajid0/MeterReaderflutter/releases/latest"><img src="https://img.shields.io/github/v/release/abdullahsajid0/MeterReaderflutter?style=flat-square&color=2563eb&label=Latest%20Release" alt="Latest Release" /></a>
   <a href="https://flutter.dev"><img src="https://img.shields.io/badge/Flutter-3.x-02569B?style=flat-square&logo=flutter&logoColor=white" alt="Flutter" /></a>
   <a href="https://dart.dev"><img src="https://img.shields.io/badge/Dart-3.x-0175C2?style=flat-square&logo=dart&logoColor=white" alt="Dart" /></a>
   <a href="https://developers.google.com/ml-kit"><img src="https://img.shields.io/badge/ML%20Kit-Vision%20OCR-4285F4?style=flat-square&logo=google&logoColor=white" alt="ML Kit" /></a>
+  <a href="https://github.com/abdullahsajid0/MeterReaderflutter/discussions"><img src="https://img.shields.io/badge/Discussions-Community-purple?style=flat-square&logo=github" alt="Discussions" /></a>
   <a href="#license"><img src="https://img.shields.io/badge/License-PolyForm%20Noncommercial-blue?style=flat-square" alt="License" /></a>
 </p>
 
@@ -116,6 +118,17 @@ Run tests with:
 ```bash
 flutter test test/billing_cycle_test.dart
 ```
+
+---
+
+## Community & Contributing
+
+Contributions, feature requests, and DISCO updates are welcome!
+
+- 💬 **Discussions**: [Join the Community Discussions](https://github.com/abdullahsajid0/MeterReaderflutter/discussions)
+- 📝 **Contributing**: Read our [Contribution Guide](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md)
+- 🔒 **Security**: See our [Security Policy](SECURITY.md)
+- ❓ **Support**: Check the [Support Guide](SUPPORT.md)
 
 ---
 

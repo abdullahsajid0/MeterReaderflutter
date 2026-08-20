@@ -1,0 +1,41 @@
+name: 💡 Feature Request
+description: Propose a new idea, tariff calculation feature, or UI enhancement
+title: "[FEATURE]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have an idea to improve WattWise? We welcome suggestions for new capabilities, UI improvements, and utility calculation enhancements!
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or Motivation
+      description: Is your feature request related to a specific problem or missing capability?
+      placeholder: I always struggle with calculating solar net-metering slabs...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed Solution / Feature Description
+      description: A clear and concise description of what you want to happen.
+      placeholder: Add a dedicated calculator for peak vs off-peak hours...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternative Approaches Considered
+      description: Any alternative solutions or features you've considered.
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Willingness to Contribute
+      options:
+        - label: I would be willing to help implement this feature by submitting a Pull Request!
+          required: false

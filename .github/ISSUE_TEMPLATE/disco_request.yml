@@ -1,0 +1,50 @@
+name: ⚡ DISCO Bill Sync / Tariff Update
+description: Report a changed bill HTML structure, new DISCO request, or NEPRA tariff slab change
+title: "[DISCO / TARIFF]: "
+labels: ["disco-sync", "tariff"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template if a power distribution company updated their web bill layout or if NEPRA updated residential unit slabs.
+
+  - type: dropdown
+    id: disco
+    attributes:
+      label: Utility Company
+      options:
+        - LESCO (Lahore)
+        - IESCO (Islamabad/Rawalpindi)
+        - GEPCO (Gujranwala)
+        - FESCO (Faisalabad)
+        - MEPCO (Multan)
+        - PESCO (Peshawar)
+        - HESCO (Hyderabad)
+        - SEPCO (Sukkur)
+        - QESCO (Quetta)
+        - TESCO (Tribal Areas)
+        - K-Electric (Karachi - New Request)
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Issue Category
+      options:
+        - Online Bill Sync Failed / Portal URL Changed
+        - New DISCO Support Request
+        - Tariff Slab Rates / Taxes Changed by NEPRA
+        - Reading Date / Unit Mismatch
+    validations:
+      required: true
+
+  - type: textarea
+    id: details
+    attributes:
+      label: Detailed Explanation
+      description: Provide the public online bill portal link, sample reference format (do not share personal CNIC), or official NEPRA notification.
+      placeholder: Official bill portal link or rate notification details...
+    validations:
+      required: true
