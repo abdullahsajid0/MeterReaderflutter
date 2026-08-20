@@ -24,9 +24,8 @@ class NotificationService {
     await _plugin.initialize(initSettings);
 
     // Request notification permission on Android 13+
-    final androidImpl =
-        _plugin.resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+    final androidImpl = _plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
     if (androidImpl != null) {
       await androidImpl.requestNotificationsPermission();
     }
@@ -78,7 +77,9 @@ class NotificationService {
       channelName,
       channelDescription: 'WattWise electricity usage alerts',
       importance: importance,
-      priority: importance == Importance.high ? Priority.high : Priority.defaultPriority,
+      priority: importance == Importance.high
+          ? Priority.high
+          : Priority.defaultPriority,
       showWhen: true,
       icon: '@mipmap/ic_launcher',
     );

@@ -32,7 +32,9 @@ void main() {
       status: 'available',
     );
 
-    test('Cycle does not prematurely jump to next month while waiting for official bill', () {
+    test(
+        'Cycle does not prematurely jump to next month while waiting for official bill',
+        () {
       // Suppose today is August 23 (3 days after the expected August 20 reading day), and the official bill is not out yet
       final today = DateTime.parse('2026-08-23T12:00:00Z');
       final cycle = cycleFor(testMeter, latestBill: julyBill, on: today);
@@ -45,7 +47,9 @@ void main() {
       expect(cycle.daysElapsed, greaterThanOrEqualTo(31));
     });
 
-    test('Store maintains readings and units during 4-5 day bill publication delay', () async {
+    test(
+        'Store maintains readings and units during 4-5 day bill publication delay',
+        () async {
       SharedPreferences.setMockInitialValues({});
       final store = WattWiseStore();
       await Future.delayed(const Duration(milliseconds: 50));
@@ -79,7 +83,9 @@ void main() {
       expect(points.isNotEmpty, isTrue);
     });
 
-    test('Official bill arrival transitions cycle, cleans settled readings, and anchors new baseline', () async {
+    test(
+        'Official bill arrival transitions cycle, cleans settled readings, and anchors new baseline',
+        () async {
       SharedPreferences.setMockInitialValues({});
       final store = WattWiseStore();
       await Future.delayed(const Duration(milliseconds: 50));
@@ -145,7 +151,8 @@ void main() {
       expect(currentReadings.length, equals(1));
       expect(currentReadings.first.previousReading, equals(15850));
       expect(currentReadings.first.currentReading, equals(15870));
-      expect(currentReadings.first.unitsConsumed, equals(20)); // 15870 - 15850 = 20 units
+      expect(currentReadings.first.unitsConsumed,
+          equals(20)); // 15870 - 15850 = 20 units
 
       // Verify new active cycle starts on 2026-08-21 and unitsThisCycle is 20
       final newCycle = store.cycleForMeter(updatedMeter);

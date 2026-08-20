@@ -296,7 +296,12 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
     void addCandidate(int candidate, double score) {
       if (candidate <= 0 || candidate > 999999999) return;
       // Exclude common voltage/frequency noise values
-      if (candidate == 50 || candidate == 60 || candidate == 220 || candidate == 230 || candidate == 240 || candidate == 110) {
+      if (candidate == 50 ||
+          candidate == 60 ||
+          candidate == 220 ||
+          candidate == 230 ||
+          candidate == 240 ||
+          candidate == 110) {
         return;
       }
       candidateScores[candidate] = (candidateScores[candidate] ?? 0.0) + score;
@@ -322,13 +327,16 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
           .replaceAll(RegExp(r'[B|R]'), '8')
           .replaceAll(RegExp(r'[g|q]'), '9');
 
-      final lineHasKwh = isKwhLine || upper.contains('KWH') | upper.contains('KW') || upper.contains('UNIT');
+      final lineHasKwh = isKwhLine ||
+          upper.contains('KWH') | upper.contains('KW') ||
+          upper.contains('UNIT');
       final baseScore = lineHasKwh ? 150.0 : 30.0;
 
       // Digital Meter Mode: Process decimal patterns & strip post-decimal digits
       if (_displayType == MeterDisplayType.digital) {
         // Match integer part before decimal separator (. , · :) followed by 1 or 2 decimal digits
-        final decimalMatch = RegExp(r'(\d{3,9})\s*[.,·:]\s*\d{1,2}').firstMatch(cleaned.replaceAll(' ', ''));
+        final decimalMatch = RegExp(r'(\d{3,9})\s*[.,·:]\s*\d{1,2}')
+            .firstMatch(cleaned.replaceAll(' ', ''));
         if (decimalMatch != null) {
           final integerPart = int.tryParse(decimalMatch.group(1)!);
           if (integerPart != null) {
@@ -377,10 +385,13 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
     }
 
     for (final block in text.blocks) {
-      final blockHasKwh = block.text.toUpperCase().contains('KWH') || block.text.toUpperCase().contains('KW');
+      final blockHasKwh = block.text.toUpperCase().contains('KWH') ||
+          block.text.toUpperCase().contains('KW');
       processString(block.text, blockHasKwh);
       for (final line in block.lines) {
-        final lineHasKwh = blockHasKwh || line.text.toUpperCase().contains('KWH') || line.text.toUpperCase().contains('KW');
+        final lineHasKwh = blockHasKwh ||
+            line.text.toUpperCase().contains('KWH') ||
+            line.text.toUpperCase().contains('KW');
         processString(line.text, lineHasKwh);
       }
     }
@@ -422,8 +433,12 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
         final deltaA = (a - baseline);
         final deltaB = (b - baseline);
         // Prefer positive deltas over negative deltas relative to baseline
-        final scoreA = (deltaA >= 0 && deltaA <= 50000) ? 100000 - deltaA : -100000 - deltaA.abs();
-        final scoreB = (deltaB >= 0 && deltaB <= 50000) ? 100000 - deltaB : -100000 - deltaB.abs();
+        final scoreA = (deltaA >= 0 && deltaA <= 50000)
+            ? 100000 - deltaA
+            : -100000 - deltaA.abs();
+        final scoreB = (deltaB >= 0 && deltaB <= 50000)
+            ? 100000 - deltaB
+            : -100000 - deltaB.abs();
         return scoreB.compareTo(scoreA);
       });
     return ranked.first;
@@ -583,7 +598,9 @@ class _ActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: enabled ? color.withValues(alpha: 0.08) : AppTheme.border.withValues(alpha: 0.3),
+      color: enabled
+          ? color.withValues(alpha: 0.08)
+          : AppTheme.border.withValues(alpha: 0.3),
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: enabled ? onPressed : null,
@@ -605,7 +622,9 @@ class _ActionButton extends StatelessWidget {
               Icon(
                 icon,
                 size: 24,
-                color: enabled ? color : AppTheme.textSecondary.withValues(alpha: 0.5),
+                color: enabled
+                    ? color
+                    : AppTheme.textSecondary.withValues(alpha: 0.5),
               ),
               const SizedBox(height: 6),
               Text(
@@ -614,7 +633,9 @@ class _ActionButton extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: enabled ? color : AppTheme.textSecondary.withValues(alpha: 0.5),
+                  color: enabled
+                      ? color
+                      : AppTheme.textSecondary.withValues(alpha: 0.5),
                 ),
               ),
             ],

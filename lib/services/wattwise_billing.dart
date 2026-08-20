@@ -161,7 +161,9 @@ class Projection {
 
 Projection project(int used, Cycle cycle, int? limit) {
   double dailyAvg = used / (cycle.daysElapsed > 0 ? cycle.daysElapsed : 1);
-  int totalProjectedDays = cycle.daysElapsed > cycle.lengthDays ? cycle.daysElapsed : cycle.lengthDays;
+  int totalProjectedDays = cycle.daysElapsed > cycle.lengthDays
+      ? cycle.daysElapsed
+      : cycle.lengthDays;
   int projected = (dailyAvg * totalProjectedDays).round();
   double? recommendedDaily;
   if (limit != null && limit > 0) {
@@ -286,9 +288,12 @@ List<DailyUsagePoint> computeDailyCycleUsage(
     final latest = dayReadings.last;
     final base = baselineReading ?? earliest.previousReading;
     if (dayReadings.length > 1) {
-      dayUnits[key] = (latest.currentReading - earliest.previousReading).clamp(0, 999999).toDouble();
+      dayUnits[key] = (latest.currentReading - earliest.previousReading)
+          .clamp(0, 999999)
+          .toDouble();
     } else {
-      dayUnits[key] = (latest.currentReading - base).clamp(0, 999999).toDouble();
+      dayUnits[key] =
+          (latest.currentReading - base).clamp(0, 999999).toDouble();
     }
     dayLatestReading[key] = latest.currentReading;
   } else if (dayKeys.isNotEmpty) {
@@ -309,7 +314,8 @@ List<DailyUsagePoint> computeDailyCycleUsage(
         final prevDt = DateTime.parse(prevKey);
         final currDt = DateTime.parse(currKey);
         final days = daysBetween(prevDt, currDt);
-        final delta = (latest.currentReading - prevLatest.currentReading).clamp(0, 999999);
+        final delta = (latest.currentReading - prevLatest.currentReading)
+            .clamp(0, 999999);
 
         if (days <= 1) {
           dayUnits[currKey] = (dayUnits[currKey] ?? 0) + delta.toDouble();

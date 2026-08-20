@@ -49,7 +49,7 @@ List<Uint8List> cropMeterImageVariants(
   // Helper to crop & process
   void addCroppedVariant(img.Image image, String label) {
     variants.add(Uint8List.fromList(img.encodeJpg(image, quality: 95)));
-    
+
     // Resize 2x for OCR detail
     final resized = img.copyResize(image, width: image.width * 2);
     variants.add(Uint8List.fromList(img.encodeJpg(resized, quality: 95)));
@@ -68,7 +68,8 @@ List<Uint8List> cropMeterImageVariants(
   final xA = (source.width * region.left).round().clamp(0, source.width - 1);
   final yA = (source.height * region.top).round().clamp(0, source.height - 1);
   final wA = (source.width * region.width).round().clamp(1, source.width - xA);
-  final hA = (source.height * region.height).round().clamp(1, source.height - yA);
+  final hA =
+      (source.height * region.height).round().clamp(1, source.height - yA);
   final cropA = img.copyCrop(source, x: xA, y: yA, width: wA, height: hA);
   addCroppedVariant(cropA, 'GuideCrop');
 

@@ -27,7 +27,8 @@ class InsightsScreen extends StatelessWidget {
                       color: AppTheme.accent.withValues(alpha: 0.08),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(LucideIcons.trendingUp, size: 44, color: AppTheme.accent),
+                    child: const Icon(LucideIcons.trendingUp,
+                        size: 44, color: AppTheme.accent),
                   ),
                   const SizedBox(height: 20),
                   Text(
@@ -40,7 +41,8 @@ class InsightsScreen extends StatelessWidget {
                   const Text(
                     'Add meters to see consumption trends and daily target pacing.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: AppTheme.textSecondary, height: 1.45),
+                    style:
+                        TextStyle(color: AppTheme.textSecondary, height: 1.45),
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton.icon(
@@ -77,9 +79,10 @@ class InsightsScreen extends StatelessWidget {
           }
         }
 
-        int householdTargetPerDay = minRemainingDays > 0 && totalRemainingUnits > 0
-            ? (totalRemainingUnits / minRemainingDays).round()
-            : 0;
+        int householdTargetPerDay =
+            minRemainingDays > 0 && totalRemainingUnits > 0
+                ? (totalRemainingUnits / minRemainingDays).round()
+                : 0;
 
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
@@ -126,8 +129,12 @@ class InsightsScreen extends StatelessWidget {
                       title: 'Over Target',
                       value: '$overLimitCount',
                       subtitle: overLimitCount > 0 ? 'Exceeded' : 'On track',
-                      icon: overLimitCount > 0 ? LucideIcons.alertTriangle : LucideIcons.checkCircle2,
-                      color: overLimitCount > 0 ? AppTheme.danger : AppTheme.success,
+                      icon: overLimitCount > 0
+                          ? LucideIcons.alertTriangle
+                          : LucideIcons.checkCircle2,
+                      color: overLimitCount > 0
+                          ? AppTheme.danger
+                          : AppTheme.success,
                     ),
                   ),
                 ],
@@ -188,7 +195,8 @@ class InsightsScreen extends StatelessWidget {
               color: AppTheme.successLight,
               borderRadius: BorderRadius.circular(14),
             ),
-            child: const Icon(LucideIcons.target, color: AppTheme.success, size: 24),
+            child: const Icon(LucideIcons.target,
+                color: AppTheme.success, size: 24),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -216,7 +224,8 @@ class InsightsScreen extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   '$remainingUnits units remaining across $daysLeft days',
-                  style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                  style: const TextStyle(
+                      fontSize: 12, color: AppTheme.textSecondary),
                 ),
               ],
             ),
@@ -286,7 +295,8 @@ class InsightsScreen extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               subtitle,
-              style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+              style:
+                  const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
             ),
           ]
         ],
@@ -358,7 +368,8 @@ class InsightsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildConsumptionGraph(BuildContext context, List<Meter> meters, WattWiseStore store) {
+  Widget _buildConsumptionGraph(
+      BuildContext context, List<Meter> meters, WattWiseStore store) {
     final List<MapEntry<String, int>> data = [];
     int maxVal = 10;
     for (var m in meters) {
@@ -451,10 +462,11 @@ class InsightsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMeterInsightCard(BuildContext context, Meter m, WattWiseStore store) {
+  Widget _buildMeterInsightCard(
+      BuildContext context, Meter m, WattWiseStore store) {
     final used = store.unitsThisCycle(m);
     final cycle = store.cycleForMeter(m);
-    
+
     final daysElapsed = cycle.daysElapsed;
     final remainingDays = cycle.daysRemaining;
 
@@ -463,7 +475,8 @@ class InsightsScreen extends StatelessWidget {
 
     if (m.monthlyLimit != null && m.monthlyLimit! > 0) {
       int remaining = (m.monthlyLimit! - used).clamp(0, m.monthlyLimit!);
-      int targetPerDay = remainingDays > 0 ? (remaining / remainingDays).round() : 0;
+      int targetPerDay =
+          remainingDays > 0 ? (remaining / remainingDays).round() : 0;
       pacingText = 'Target: ~$targetPerDay units/day';
       if (used >= m.monthlyLimit!) {
         pacingColor = AppTheme.danger;
@@ -501,7 +514,8 @@ class InsightsScreen extends StatelessWidget {
                   color: AppTheme.primary.withValues(alpha: 0.06),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(LucideIcons.gauge, color: AppTheme.primary, size: 20),
+                child: const Icon(LucideIcons.gauge,
+                    color: AppTheme.primary, size: 20),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -518,7 +532,8 @@ class InsightsScreen extends StatelessWidget {
                     ),
                     Text(
                       '${cycle.daysRemaining} days left in cycle',
-                      style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                      style: const TextStyle(
+                          color: AppTheme.textSecondary, fontSize: 12),
                     ),
                   ],
                 ),
@@ -537,7 +552,8 @@ class InsightsScreen extends StatelessWidget {
                   if (m.monthlyLimit != null)
                     Text(
                       'Limit: ${m.monthlyLimit}',
-                      style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11),
+                      style: const TextStyle(
+                          color: AppTheme.textSecondary, fontSize: 11),
                     ),
                 ],
               )
@@ -554,7 +570,9 @@ class InsightsScreen extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  m.monthlyLimit != null ? LucideIcons.target : LucideIcons.activity,
+                  m.monthlyLimit != null
+                      ? LucideIcons.target
+                      : LucideIcons.activity,
                   size: 13,
                   color: pacingColor,
                 ),

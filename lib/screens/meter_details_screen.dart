@@ -44,18 +44,21 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
         final cycle = store.cycleForMeter(meter);
         final used = store.unitsThisCycle(meter);
         final stats = analytics(readings);
-        final dailyPoints = computeDailyCycleUsage(readings, cycle, latestBill: store.billFor(meter.id));
+        final dailyPoints = computeDailyCycleUsage(readings, cycle,
+            latestBill: store.billFor(meter.id));
 
         // Filter readings for the current cycle (all readings taken since the last bill / cycle start)
         final bill = store.billFor(meter.id);
-        final billDate = bill != null ? DateTime.tryParse(bill.readingDate) : null;
+        final billDate =
+            bill != null ? DateTime.tryParse(bill.readingDate) : null;
         final cycleReadings = readings.where((r) {
           final dt = DateTime.tryParse(r.scannedAt);
           if (dt != null) {
             if (billDate != null) {
               return !dt.isBefore(billDate.subtract(const Duration(hours: 12)));
             }
-            return !dt.isBefore(cycle.start.subtract(const Duration(hours: 12)));
+            return !dt
+                .isBefore(cycle.start.subtract(const Duration(hours: 12)));
           }
           return r.billingMonth == cycle.billingMonth;
         }).toList();
@@ -73,7 +76,8 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
               ),
               PopupMenuButton<String>(
                 icon: const Icon(LucideIcons.moreVertical),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
                 onSelected: (val) {
                   if (val == 'delete') {
                     _confirmDeleteMeter(context, store, meter);
@@ -84,7 +88,8 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
                     value: 'delete',
                     child: Row(
                       children: [
-                        Icon(LucideIcons.trash2, color: AppTheme.danger, size: 18),
+                        Icon(LucideIcons.trash2,
+                            color: AppTheme.danger, size: 18),
                         SizedBox(width: 10),
                         Text(
                           'Delete Meter',
@@ -111,7 +116,8 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
                 meter: meter,
                 cycle: cycle,
                 bill: store.billFor(meter.id),
-                onEditSchedule: () => _editSchedule(context, store, meter, cycle),
+                onEditSchedule: () =>
+                    _editSchedule(context, store, meter, cycle),
                 onFetchBill: () => _fetchBill(context, store, meter),
               ),
               const SizedBox(height: 24),
@@ -120,7 +126,8 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
                 const SizedBox(height: 10),
                 _buildAreaUsageCard(context, stats, dailyPoints),
                 const SizedBox(height: 24),
-                _buildSectionHeader(isDaily ? 'Current Cycle Readings' : 'Monthly History'),
+                _buildSectionHeader(
+                    isDaily ? 'Current Cycle Readings' : 'Monthly History'),
                 const SizedBox(height: 10),
                 if (isDaily)
                   ..._buildCycleReadingTiles(context, cycleReadings)
@@ -139,18 +146,21 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
                             color: AppTheme.accentLight,
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(LucideIcons.camera, color: AppTheme.accent, size: 28),
+                          child: const Icon(LucideIcons.camera,
+                              color: AppTheme.accent, size: 28),
                         ),
                         const SizedBox(height: 12),
                         const Text(
                           'No readings recorded yet',
-                          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                          style: TextStyle(
+                              fontWeight: FontWeight.w700, fontSize: 16),
                         ),
                         const SizedBox(height: 4),
                         const Text(
                           'Scan your meter to start tracking daily and monthly usage history.',
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+                          style: TextStyle(
+                              color: AppTheme.textSecondary, fontSize: 13),
                         ),
                       ],
                     ),
@@ -193,11 +203,14 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
 
     if (m.monthlyLimit != null && m.monthlyLimit! > 0) {
       int remaining = (m.monthlyLimit! - used).clamp(0, m.monthlyLimit!);
-      int targetPerDay = remainingDays > 0 ? (remaining / remainingDays).round() : 0;
+      int targetPerDay =
+          remainingDays > 0 ? (remaining / remainingDays).round() : 0;
       int avgPerDay = daysElapsed > 0 ? (used / daysElapsed).round() : 0;
 
       title = cycle.isPendingOfficialBill ? 'Cycle Pacing' : 'Daily Target';
-      value = cycle.isPendingOfficialBill ? '~$avgPerDay units/day' : '~$targetPerDay units/day';
+      value = cycle.isPendingOfficialBill
+          ? '~$avgPerDay units/day'
+          : '~$targetPerDay units/day';
       subtitle = cycle.isPendingOfficialBill
           ? '$used units used over $daysElapsed days · Limit was ${m.monthlyLimit} units'
           : 'Averaging ~$avgPerDay units/day · $remaining units left in $remainingDays days';
@@ -265,7 +278,8 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                  style: const TextStyle(
+                      fontSize: 12, color: AppTheme.textSecondary),
                 ),
               ],
             ),
@@ -329,12 +343,14 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
                     _timeframeTabButton(
                       title: 'Daily',
                       isActive: isDaily,
-                      onTap: () => setState(() => _timeframe = ChartTimeframe.daily),
+                      onTap: () =>
+                          setState(() => _timeframe = ChartTimeframe.daily),
                     ),
                     _timeframeTabButton(
                       title: 'Monthly',
                       isActive: !isDaily,
-                      onTap: () => setState(() => _timeframe = ChartTimeframe.monthly),
+                      onTap: () =>
+                          setState(() => _timeframe = ChartTimeframe.monthly),
                     ),
                   ],
                 ),
@@ -350,7 +366,9 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
-                isDaily ? '24h Daily Usage (Units)' : 'Monthly Overview (Units)',
+                isDaily
+                    ? '24h Daily Usage (Units)'
+                    : 'Monthly Overview (Units)',
                 style: const TextStyle(
                   fontSize: 12,
                   color: AppTheme.textSecondary,
@@ -359,7 +377,8 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
               ),
               if (isDaily && dailyPoints.isNotEmpty) ...[
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                   decoration: BoxDecoration(
                     color: AppTheme.background,
                     borderRadius: BorderRadius.circular(8),
@@ -393,11 +412,13 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
               decoration: BoxDecoration(
                 color: AppTheme.accent.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppTheme.accent.withValues(alpha: 0.2)),
+                border:
+                    Border.all(color: AppTheme.accent.withValues(alpha: 0.2)),
               ),
               child: Row(
                 children: [
-                  const Icon(LucideIcons.calendar, size: 14, color: AppTheme.accent),
+                  const Icon(LucideIcons.calendar,
+                      size: 14, color: AppTheme.accent),
                   const SizedBox(width: 6),
                   Text(
                     _selectedDailyPoint!.label,
@@ -420,7 +441,8 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
                     const Spacer(),
                     Text(
                       'Reading: ${_selectedDailyPoint!.readingValue}',
-                      style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary),
+                      style: const TextStyle(
+                          fontSize: 11, color: AppTheme.textSecondary),
                     ),
                   ],
                 ],
@@ -508,11 +530,13 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
   Widget _buildZoomableDailyAreaChart(List<DailyUsagePoint> points) {
     if (points.isEmpty) {
       return const Center(
-        child: Text('No daily data available for this cycle', style: TextStyle(color: AppTheme.textMuted)),
+        child: Text('No daily data available for this cycle',
+            style: TextStyle(color: AppTheme.textMuted)),
       );
     }
 
-    double maxVal = points.map((p) => p.units).fold(0.0, (a, b) => a > b ? a : b);
+    double maxVal =
+        points.map((p) => p.units).fold(0.0, (a, b) => a > b ? a : b);
     if (maxVal <= 0) maxVal = 10;
     final double yInterval = (maxVal / 3).clamp(1.0, 1000.0);
     final isZoomed = _zoomLevel > 1.0;
@@ -523,7 +547,8 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
         const double yAxisWidth = 28.0;
         final chartAvailableWidth = availableWidth - yAxisWidth - 6;
         final chartContentWidth = isZoomed
-            ? math.max(chartAvailableWidth, points.length * 36.0 * (_zoomLevel / 2.0))
+            ? math.max(
+                chartAvailableWidth, points.length * 36.0 * (_zoomLevel / 2.0))
             : chartAvailableWidth;
 
         return Row(
@@ -538,20 +563,38 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    maxVal >= 1000 ? '${(maxVal / 1000).toStringAsFixed(1)}k' : '${(maxVal * 1.25).round()}',
-                    style: const TextStyle(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
+                    maxVal >= 1000
+                        ? '${(maxVal / 1000).toStringAsFixed(1)}k'
+                        : '${(maxVal * 1.25).round()}',
+                    style: const TextStyle(
+                        fontSize: 10,
+                        color: AppTheme.textMuted,
+                        fontWeight: FontWeight.w600),
                   ),
                   Text(
-                    maxVal >= 1000 ? '${((maxVal * 2 / 3) / 1000).toStringAsFixed(1)}k' : '${(maxVal * 2 / 3).round()}',
-                    style: const TextStyle(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
+                    maxVal >= 1000
+                        ? '${((maxVal * 2 / 3) / 1000).toStringAsFixed(1)}k'
+                        : '${(maxVal * 2 / 3).round()}',
+                    style: const TextStyle(
+                        fontSize: 10,
+                        color: AppTheme.textMuted,
+                        fontWeight: FontWeight.w600),
                   ),
                   Text(
-                    maxVal >= 1000 ? '${((maxVal / 3) / 1000).toStringAsFixed(1)}k' : '${(maxVal / 3).round()}',
-                    style: const TextStyle(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
+                    maxVal >= 1000
+                        ? '${((maxVal / 3) / 1000).toStringAsFixed(1)}k'
+                        : '${(maxVal / 3).round()}',
+                    style: const TextStyle(
+                        fontSize: 10,
+                        color: AppTheme.textMuted,
+                        fontWeight: FontWeight.w600),
                   ),
                   const Text(
                     '0',
-                    style: TextStyle(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                        fontSize: 10,
+                        color: AppTheme.textMuted,
+                        fontWeight: FontWeight.w600),
                   ),
                 ],
               ),
@@ -589,14 +632,18 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
                       ),
                       titlesData: FlTitlesData(
                         show: true,
-                        leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        leftTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false)),
                         bottomTitles: AxisTitles(
                           sideTitles: SideTitles(
                             showTitles: true,
-                            interval: isZoomed ? 1.0 : (points.length / 5).clamp(1, 10).toDouble(),
+                            interval: isZoomed
+                                ? 1.0
+                                : (points.length / 5).clamp(1, 10).toDouble(),
                             getTitlesWidget: (value, meta) {
                               final idx = value.toInt();
-                              if (idx < 0 || idx >= points.length) return const SizedBox();
+                              if (idx < 0 || idx >= points.length)
+                                return const SizedBox();
                               final p = points[idx];
                               return Padding(
                                 padding: const EdgeInsets.only(top: 8.0),
@@ -604,22 +651,29 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
                                   isZoomed ? p.shortLabel : p.label,
                                   style: TextStyle(
                                     fontSize: isZoomed ? 11 : 10,
-                                    color: p.hasActualReading ? AppTheme.accent : AppTheme.textSecondary,
-                                    fontWeight: p.hasActualReading || isZoomed ? FontWeight.w700 : FontWeight.w500,
+                                    color: p.hasActualReading
+                                        ? AppTheme.accent
+                                        : AppTheme.textSecondary,
+                                    fontWeight: p.hasActualReading || isZoomed
+                                        ? FontWeight.w700
+                                        : FontWeight.w500,
                                   ),
                                 ),
                               );
                             },
                           ),
                         ),
-                        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        rightTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false)),
+                        topTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false)),
                       ),
                       borderData: FlBorderData(show: false),
                       lineTouchData: LineTouchData(
                         enabled: true,
                         touchCallback: (event, response) {
-                          if (response?.lineBarSpots != null && response!.lineBarSpots!.isNotEmpty) {
+                          if (response?.lineBarSpots != null &&
+                              response!.lineBarSpots!.isNotEmpty) {
                             final spot = response.lineBarSpots!.first;
                             final idx = spot.x.toInt();
                             if (idx >= 0 && idx < points.length) {
@@ -673,14 +727,20 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
                             checkToShowDot: (spot, barData) {
                               final idx = spot.x.toInt();
                               if (isZoomed) return true;
-                              return idx >= 0 && idx < points.length && points[idx].hasActualReading;
+                              return idx >= 0 &&
+                                  idx < points.length &&
+                                  points[idx].hasActualReading;
                             },
                             getDotPainter: (spot, percent, barData, index) {
                               final idx = spot.x.toInt();
-                              final isActual = idx >= 0 && idx < points.length && points[idx].hasActualReading;
+                              final isActual = idx >= 0 &&
+                                  idx < points.length &&
+                                  points[idx].hasActualReading;
                               return FlDotCirclePainter(
                                 radius: isActual ? 4.5 : 2.5,
-                                color: isActual ? AppTheme.accent : AppTheme.accent.withValues(alpha: 0.7),
+                                color: isActual
+                                    ? AppTheme.accent
+                                    : AppTheme.accent.withValues(alpha: 0.7),
                                 strokeWidth: 2,
                                 strokeColor: Colors.white,
                               );
@@ -714,11 +774,15 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
   Widget _buildMonthlyAreaChart(AnalyticsResult stats) {
     if (stats.months.isEmpty) {
       return const Center(
-        child: Text('No monthly history recorded yet', style: TextStyle(color: AppTheme.textMuted)),
+        child: Text('No monthly history recorded yet',
+            style: TextStyle(color: AppTheme.textMuted)),
       );
     }
 
-    double maxVal = stats.months.map((m) => m.value).fold(0, (a, b) => a > b ? a : b).toDouble();
+    double maxVal = stats.months
+        .map((m) => m.value)
+        .fold(0, (a, b) => a > b ? a : b)
+        .toDouble();
     if (maxVal <= 0) maxVal = 100;
     final double yInterval = (maxVal / 3).clamp(1.0, 1000.0);
     const double yAxisWidth = 28.0;
@@ -735,20 +799,38 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                maxVal >= 1000 ? '${(maxVal / 1000).toStringAsFixed(1)}k' : '${(maxVal * 1.25).round()}',
-                style: const TextStyle(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
+                maxVal >= 1000
+                    ? '${(maxVal / 1000).toStringAsFixed(1)}k'
+                    : '${(maxVal * 1.25).round()}',
+                style: const TextStyle(
+                    fontSize: 10,
+                    color: AppTheme.textMuted,
+                    fontWeight: FontWeight.w600),
               ),
               Text(
-                maxVal >= 1000 ? '${((maxVal * 2 / 3) / 1000).toStringAsFixed(1)}k' : '${(maxVal * 2 / 3).round()}',
-                style: const TextStyle(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
+                maxVal >= 1000
+                    ? '${((maxVal * 2 / 3) / 1000).toStringAsFixed(1)}k'
+                    : '${(maxVal * 2 / 3).round()}',
+                style: const TextStyle(
+                    fontSize: 10,
+                    color: AppTheme.textMuted,
+                    fontWeight: FontWeight.w600),
               ),
               Text(
-                maxVal >= 1000 ? '${((maxVal / 3) / 1000).toStringAsFixed(1)}k' : '${(maxVal / 3).round()}',
-                style: const TextStyle(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
+                maxVal >= 1000
+                    ? '${((maxVal / 3) / 1000).toStringAsFixed(1)}k'
+                    : '${(maxVal / 3).round()}',
+                style: const TextStyle(
+                    fontSize: 10,
+                    color: AppTheme.textMuted,
+                    fontWeight: FontWeight.w600),
               ),
               const Text(
                 '0',
-                style: TextStyle(fontSize: 10, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                    fontSize: 10,
+                    color: AppTheme.textMuted,
+                    fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -774,12 +856,14 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
                 ),
                 titlesData: FlTitlesData(
                   show: true,
-                  leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  leftTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
                       getTitlesWidget: (value, meta) {
-                        if (value.toInt() < 0 || value.toInt() >= stats.months.length) {
+                        if (value.toInt() < 0 ||
+                            value.toInt() >= stats.months.length) {
                           return const SizedBox();
                         }
                         final monthStr = stats.months[value.toInt()].key;
@@ -798,8 +882,10 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
                       },
                     ),
                   ),
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
                 ),
                 borderData: FlBorderData(show: false),
                 lineTouchData: const LineTouchData(enabled: true),
@@ -847,7 +933,8 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
   }
 
   // ─── Current Cycle Reading Tiles ──────────────────────────────────────
-  List<Widget> _buildCycleReadingTiles(BuildContext context, List<Reading> cycleReadings) {
+  List<Widget> _buildCycleReadingTiles(
+      BuildContext context, List<Reading> cycleReadings) {
     if (cycleReadings.isEmpty) {
       return [
         Container(
@@ -879,7 +966,8 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
       if (i < cycleReadings.length - 1) {
         final older = cycleReadings[i + 1];
         final delta = r.currentReading - older.currentReading;
-        deltaText = delta >= 0 ? '+$delta units since previous scan' : '$delta units';
+        deltaText =
+            delta >= 0 ? '+$delta units since previous scan' : '$delta units';
       } else {
         deltaText = 'First scan this cycle';
       }
@@ -901,7 +989,8 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
                   color: AppTheme.primary.withValues(alpha: 0.06),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(LucideIcons.activity, color: AppTheme.primary, size: 18),
+                child: const Icon(LucideIcons.activity,
+                    color: AppTheme.primary, size: 18),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -913,7 +1002,8 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
                       children: [
                         Text(
                           'Reading: ${r.currentReading}',
-                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w700, fontSize: 14),
                         ),
                         Text(
                           '${r.unitsConsumed} units',
@@ -932,12 +1022,14 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
                         Expanded(
                           child: Text(
                             deltaText,
-                            style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                            style: const TextStyle(
+                                fontSize: 12, color: AppTheme.textSecondary),
                           ),
                         ),
                         Text(
                           dateStr,
-                          style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                          style: const TextStyle(
+                              fontSize: 11, color: AppTheme.textMuted),
                         ),
                       ],
                     ),
@@ -982,7 +1074,8 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
       final monthKey = monthEntry.key;
       final totalUnits = monthEntry.value;
 
-      final monthReadings = allReadings.where((r) => r.billingMonth == monthKey).toList();
+      final monthReadings =
+          allReadings.where((r) => r.billingMonth == monthKey).toList();
       final scanCount = monthReadings.length;
 
       String monthName = monthKey;
@@ -1008,7 +1101,8 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
                   color: AppTheme.accentLight,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(LucideIcons.calendar, color: AppTheme.accent, size: 18),
+                child: const Icon(LucideIcons.calendar,
+                    color: AppTheme.accent, size: 18),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -1020,7 +1114,8 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
                       children: [
                         Text(
                           monthName,
-                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w700, fontSize: 14),
                         ),
                         Text(
                           '$totalUnits units',
@@ -1038,15 +1133,20 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
                       children: [
                         Text(
                           '$scanCount scan${scanCount == 1 ? '' : 's'} recorded',
-                          style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                          style: const TextStyle(
+                              fontSize: 12, color: AppTheme.textSecondary),
                         ),
                         if (stats.avg > 0)
                           Text(
-                            totalUnits > stats.avg ? 'Above average' : 'Below average',
+                            totalUnits > stats.avg
+                                ? 'Above average'
+                                : 'Below average',
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: totalUnits > stats.avg ? AppTheme.warning : AppTheme.success,
+                              color: totalUnits > stats.avg
+                                  ? AppTheme.warning
+                                  : AppTheme.success,
                             ),
                           ),
                       ],
@@ -1109,7 +1209,8 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: const BoxDecoration(
                   color: AppTheme.accentLight,
                   borderRadius: BorderRadius.all(Radius.circular(10)),
@@ -1141,7 +1242,8 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
             const SizedBox(height: 8),
             Text(
               '${(m.monthlyLimit! - used).clamp(0, m.monthlyLimit!)} units remaining until limit',
-              style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+              style:
+                  const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
             ),
           ]
         ],
@@ -1166,7 +1268,8 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
     store.setReadingSchedule(meter.id, overrideDate: toISODate(selected));
     AppToast.show(
       context,
-      message: 'Next reading set for ${DateFormat('d MMM yyyy').format(selected)}',
+      message:
+          'Next reading set for ${DateFormat('d MMM yyyy').format(selected)}',
       type: ToastType.success,
     );
   }

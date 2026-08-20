@@ -29,7 +29,8 @@ class DashboardScreen extends StatelessWidget {
                       color: AppTheme.accent.withValues(alpha: 0.08),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(LucideIcons.gauge, size: 44, color: AppTheme.accent),
+                    child: const Icon(LucideIcons.gauge,
+                        size: 44, color: AppTheme.accent),
                   ),
                   const SizedBox(height: 20),
                   Text(
@@ -42,7 +43,8 @@ class DashboardScreen extends StatelessWidget {
                   const Text(
                     'Add an electricity meter to track consumption, billing cycles, and targets.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: AppTheme.textSecondary, height: 1.45),
+                    style:
+                        TextStyle(color: AppTheme.textSecondary, height: 1.45),
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton.icon(
@@ -81,7 +83,8 @@ class DashboardScreen extends StatelessWidget {
                       padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       child: Row(
                         children: [
-                          Icon(LucideIcons.plus, size: 15, color: AppTheme.accent),
+                          Icon(LucideIcons.plus,
+                              size: 15, color: AppTheme.accent),
                           SizedBox(width: 4),
                           Text(
                             'Add Meter',
@@ -139,8 +142,10 @@ class _TactileMeterCardState extends State<_TactileMeterCard> {
     if (m.monthlyLimit != null && m.monthlyLimit! > 0) {
       pct = used / m.monthlyLimit!;
       int remainingUnits = (m.monthlyLimit! - used).clamp(0, m.monthlyLimit!);
-      int targetPerDay = remainingDays > 0 ? (remainingUnits / remainingDays).round() : 0;
-      pacingLabel = 'Target: ~$targetPerDay units/day · $remainingUnits remaining';
+      int targetPerDay =
+          remainingDays > 0 ? (remainingUnits / remainingDays).round() : 0;
+      pacingLabel =
+          'Target: ~$targetPerDay units/day · $remainingUnits remaining';
     } else {
       int avgPerDay = daysElapsed > 0 ? (used / daysElapsed).round() : 0;
       pacingLabel = 'Averaging ~$avgPerDay units/day over $daysElapsed days';
@@ -201,7 +206,8 @@ class _TactileMeterCardState extends State<_TactileMeterCard> {
                           color: AppTheme.accent.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(13),
                         ),
-                        child: const Icon(LucideIcons.gauge, size: 20, color: AppTheme.accent),
+                        child: const Icon(LucideIcons.gauge,
+                            size: 20, color: AppTheme.accent),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -221,7 +227,8 @@ class _TactileMeterCardState extends State<_TactileMeterCard> {
                             Row(
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 7, vertical: 2),
                                   decoration: BoxDecoration(
                                     color: AppTheme.background,
                                     borderRadius: BorderRadius.circular(6),
@@ -313,7 +320,8 @@ class _TactileMeterCardState extends State<_TactileMeterCard> {
                       child: LinearProgressIndicator(
                         value: clampedPct,
                         backgroundColor: AppTheme.borderLight,
-                        valueColor: AlwaysStoppedAnimation<Color>(progressColor),
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(progressColor),
                         minHeight: 6,
                       ),
                     ),
@@ -348,7 +356,8 @@ class _TactileMeterCardState extends State<_TactileMeterCard> {
 
                   // Pacing Label Pill
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                     decoration: BoxDecoration(
                       color: AppTheme.background,
                       borderRadius: BorderRadius.circular(10),
@@ -356,7 +365,9 @@ class _TactileMeterCardState extends State<_TactileMeterCard> {
                     child: Row(
                       children: [
                         Icon(
-                          m.monthlyLimit != null ? LucideIcons.target : LucideIcons.activity,
+                          m.monthlyLimit != null
+                              ? LucideIcons.target
+                              : LucideIcons.activity,
                           size: 14,
                           color: AppTheme.textSecondary,
                         ),
@@ -393,7 +404,9 @@ class _TactileMeterCardState extends State<_TactileMeterCard> {
                         '${cycle.daysRemaining} days left',
                         style: TextStyle(
                           fontSize: 12,
-                          color: cycle.daysRemaining <= 3 ? AppTheme.danger : AppTheme.textSecondary,
+                          color: cycle.daysRemaining <= 3
+                              ? AppTheme.danger
+                              : AppTheme.textSecondary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -405,7 +418,8 @@ class _TactileMeterCardState extends State<_TactileMeterCard> {
                     child: LinearProgressIndicator(
                       value: (cycle.progressPct / 100).clamp(0.0, 1.0),
                       backgroundColor: AppTheme.borderLight,
-                      valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.accent),
+                      valueColor:
+                          const AlwaysStoppedAnimation<Color>(AppTheme.accent),
                       minHeight: 4,
                     ),
                   ),

@@ -24,7 +24,8 @@ Future<BillInfo> fetchPitcBill(
 }) async {
   final cleanReference = referenceNumber.replaceAll(RegExp(r'\D'), '');
   final cleanCompany = company.trim().toUpperCase();
-  final slug = pitcProviderSlugs[cleanCompany] ?? '${cleanCompany.toLowerCase()}bill';
+  final slug =
+      pitcProviderSlugs[cleanCompany] ?? '${cleanCompany.toLowerCase()}bill';
   if (!RegExp(r'^\d{10,14}$').hasMatch(cleanReference)) {
     throw Exception(
         'Enter the 10 to 14 digit reference number printed on the bill');
@@ -81,10 +82,14 @@ Future<BillInfo> fetchPitcBill(
     }
     final parsed = parsePitcBillHtml(response.body);
     if (parsed != null &&
-        (parsed.previousReading != null || parsed.currentReading != null || parsed.unitsBilled != null)) {
+        (parsed.previousReading != null ||
+            parsed.currentReading != null ||
+            parsed.unitsBilled != null)) {
       final current = parsed.currentReading ?? 1000;
-      final previous = parsed.previousReading ?? (current - (parsed.unitsBilled ?? 100));
-      final readingDate = parsed.readingDate ?? DateTime.now().toIso8601String().substring(0, 10);
+      final previous =
+          parsed.previousReading ?? (current - (parsed.unitsBilled ?? 100));
+      final readingDate = parsed.readingDate ??
+          DateTime.now().toIso8601String().substring(0, 10);
       return BillInfo(
         meterId: meterId,
         fetchedAt: DateTime.now().toUtc().toIso8601String(),
@@ -96,7 +101,8 @@ Future<BillInfo> fetchPitcBill(
         currentReading: current,
         readingDate: readingDate,
         nextReadingDate: _addMonth(readingDate),
-        unitsBilled: parsed.unitsBilled ?? (current - previous).clamp(0, 999999).toInt(),
+        unitsBilled:
+            parsed.unitsBilled ?? (current - previous).clamp(0, 999999).toInt(),
         amountPkr: parsed.amountPkr,
         dueDate: parsed.dueDate,
         status: 'available',

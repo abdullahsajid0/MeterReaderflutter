@@ -53,7 +53,8 @@ class BillingCycleCard extends StatelessWidget {
                   color: AppTheme.accentLight,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(LucideIcons.calendarClock, color: AppTheme.accent, size: 18),
+                child: const Icon(LucideIcons.calendarClock,
+                    color: AppTheme.accent, size: 18),
               ),
               const SizedBox(width: 10),
               const Expanded(
@@ -64,7 +65,8 @@ class BillingCycleCard extends StatelessWidget {
               ),
               IconButton(
                 tooltip: 'Edit reading schedule',
-                icon: const Icon(LucideIcons.pencil, size: 16, color: AppTheme.textSecondary),
+                icon: const Icon(LucideIcons.pencil,
+                    size: 16, color: AppTheme.textSecondary),
                 onPressed: onEditSchedule,
               ),
             ],
@@ -92,11 +94,13 @@ class BillingCycleCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppTheme.warning.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppTheme.warning.withValues(alpha: 0.3)),
+                border:
+                    Border.all(color: AppTheme.warning.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
-                  const Icon(LucideIcons.clock, size: 16, color: AppTheme.warning),
+                  const Icon(LucideIcons.clock,
+                      size: 16, color: AppTheme.warning),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -117,7 +121,9 @@ class BillingCycleCard extends StatelessWidget {
               _Metric(label: 'Elapsed', value: '${cycle.daysElapsed} days'),
               _Metric(
                 label: 'Remaining',
-                value: cycle.isPendingOfficialBill ? 'Bill pending' : '${cycle.daysRemaining} days',
+                value: cycle.isPendingOfficialBill
+                    ? 'Bill pending'
+                    : '${cycle.daysRemaining} days',
               ),
               _Metric(
                 label: 'Reading Date',
@@ -133,7 +139,9 @@ class BillingCycleCard extends StatelessWidget {
               value: (cycle.progressPct / 100).clamp(0.0, 1.0),
               backgroundColor: AppTheme.borderLight,
               valueColor: AlwaysStoppedAnimation<Color>(
-                cycle.isPendingOfficialBill ? AppTheme.warning : AppTheme.accent,
+                cycle.isPendingOfficialBill
+                    ? AppTheme.warning
+                    : AppTheme.accent,
               ),
             ),
           ),
@@ -156,7 +164,9 @@ class BillingCycleCard extends StatelessWidget {
                   : null,
               onPressed: onFetchBill,
               icon: const Icon(LucideIcons.refreshCw, size: 15),
-              label: Text(bill == null ? 'Fetch Official Bill' : 'Refresh Official Bill'),
+              label: Text(bill == null
+                  ? 'Fetch Official Bill'
+                  : 'Refresh Official Bill'),
             ),
           ),
           if (bill != null) ...[
@@ -166,12 +176,14 @@ class BillingCycleCard extends StatelessWidget {
             ),
             Row(
               children: [
-                const Icon(LucideIcons.receipt, size: 15, color: AppTheme.success),
+                const Icon(LucideIcons.receipt,
+                    size: 15, color: AppTheme.success),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'Official bill recorded: ${dateFormat.format(DateTime.parse(bill!.readingDate))}',
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                        fontSize: 12, fontWeight: FontWeight.w600),
                   ),
                 ),
               ],
@@ -181,15 +193,19 @@ class BillingCycleCard extends StatelessWidget {
               spacing: 8,
               runSpacing: 8,
               children: [
-                _BillMetric(label: 'Previous', value: bill!.previousReading.toString()),
-                _BillMetric(label: 'Present', value: bill!.currentReading.toString()),
-                _BillMetric(label: 'Units used', value: bill!.unitsBilled.toString()),
+                _BillMetric(
+                    label: 'Previous', value: bill!.previousReading.toString()),
+                _BillMetric(
+                    label: 'Present', value: bill!.currentReading.toString()),
+                _BillMetric(
+                    label: 'Units used', value: bill!.unitsBilled.toString()),
                 if (bill!.amountPkr != null)
                   _BillMetric(label: 'Amount', value: 'Rs ${bill!.amountPkr}'),
                 if (bill!.dueDate != null)
                   _BillMetric(
                     label: 'Due date',
-                    value: DateFormat('d MMM').format(DateTime.parse(bill!.dueDate!)),
+                    value: DateFormat('d MMM')
+                        .format(DateTime.parse(bill!.dueDate!)),
                   ),
               ],
             ),
@@ -257,12 +273,18 @@ class _BillMetric extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 10, fontWeight: FontWeight.w500),
+            style: const TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 10,
+                fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 2),
           Text(
             value,
-            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppTheme.textPrimary),
+            style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+                color: AppTheme.textPrimary),
           ),
         ],
       ),

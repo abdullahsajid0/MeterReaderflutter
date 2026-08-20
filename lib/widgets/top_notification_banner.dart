@@ -132,7 +132,8 @@ class _TopBannerWidgetState extends State<_TopBannerWidget>
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: widget.iconColor.withValues(alpha: 0.4), width: 1.5),
+                border: Border.all(
+                    color: widget.iconColor.withValues(alpha: 0.4), width: 1.5),
               ),
               child: Row(
                 children: [
@@ -174,7 +175,8 @@ class _TopBannerWidgetState extends State<_TopBannerWidget>
                   IconButton(
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
-                    icon: Icon(LucideIcons.x, color: Colors.white.withValues(alpha: 0.6), size: 18),
+                    icon: Icon(LucideIcons.x,
+                        color: Colors.white.withValues(alpha: 0.6), size: 18),
                     onPressed: _dismiss,
                   ),
                 ],

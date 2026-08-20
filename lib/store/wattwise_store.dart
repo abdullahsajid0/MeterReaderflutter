@@ -181,10 +181,7 @@ class WattWiseStore extends ChangeNotifier {
       billingMonth: billingMonth,
     );
 
-    readings = [
-      reading,
-      ...readings
-    ];
+    readings = [reading, ...readings];
     _persistReadings();
 
     meters = meters
@@ -280,7 +277,8 @@ class WattWiseStore extends ChangeNotifier {
   }
 
   void dismissAllAlerts(List<String> keys) {
-    final newDismissed = <String>{...dismissed, ...keys}.toList().take(200).toList();
+    final newDismissed =
+        <String>{...dismissed, ...keys}.toList().take(200).toList();
     dismissed = newDismissed;
     _persistDismissed();
   }
@@ -320,7 +318,8 @@ class WattWiseStore extends ChangeNotifier {
         if (dt != null) {
           return !dt.isBefore(cycle.start.subtract(const Duration(hours: 12)));
         }
-        return r.cycleEnd == cycle.endISO || r.billingMonth == cycle.billingMonth;
+        return r.cycleEnd == cycle.endISO ||
+            r.billingMonth == cycle.billingMonth;
       });
     } catch (_) {
       return meterReadings.isNotEmpty ? meterReadings.first : null;

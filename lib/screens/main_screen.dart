@@ -55,11 +55,13 @@ class _MainScreenState extends State<MainScreen> {
                       right: 10,
                       top: 10,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 5, vertical: 2),
                         decoration: BoxDecoration(
                           color: AppTheme.danger,
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: AppTheme.surface, width: 1.5),
+                          border:
+                              Border.all(color: AppTheme.surface, width: 1.5),
                         ),
                         child: Text(
                           '${alerts.length}',
@@ -110,13 +112,17 @@ class _MainScreenState extends State<MainScreen> {
           },
           destinations: const [
             NavigationDestination(
-              icon: Icon(LucideIcons.gauge, size: 22, color: AppTheme.textSecondary),
-              selectedIcon: Icon(LucideIcons.gauge, size: 22, color: AppTheme.accent),
+              icon: Icon(LucideIcons.gauge,
+                  size: 22, color: AppTheme.textSecondary),
+              selectedIcon:
+                  Icon(LucideIcons.gauge, size: 22, color: AppTheme.accent),
               label: 'Meters',
             ),
             NavigationDestination(
-              icon: Icon(LucideIcons.trendingUp, size: 22, color: AppTheme.textSecondary),
-              selectedIcon: Icon(LucideIcons.trendingUp, size: 22, color: AppTheme.accent),
+              icon: Icon(LucideIcons.trendingUp,
+                  size: 22, color: AppTheme.textSecondary),
+              selectedIcon: Icon(LucideIcons.trendingUp,
+                  size: 22, color: AppTheme.accent),
               label: 'Insights',
             ),
           ],

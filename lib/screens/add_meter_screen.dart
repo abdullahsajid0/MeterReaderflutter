@@ -60,24 +60,30 @@ class _AddMeterScreenState extends State<AddMeterScreen> {
                     decoration: const InputDecoration(
                       labelText: 'Meter Nickname',
                       hintText: 'e.g. Home, Ground Floor, Office',
-                      prefixIcon: Icon(LucideIcons.home, size: 18, color: AppTheme.textSecondary),
+                      prefixIcon: Icon(LucideIcons.home,
+                          size: 18, color: AppTheme.textSecondary),
                     ),
                     textCapitalization: TextCapitalization.words,
-                    validator: (v) => v == null || v.trim().isEmpty ? 'Please enter a nickname' : null,
+                    validator: (v) => v == null || v.trim().isEmpty
+                        ? 'Please enter a nickname'
+                        : null,
                     onSaved: (v) => nickname = v!.trim(),
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
                     decoration: const InputDecoration(
                       labelText: 'Electricity Provider',
-                      prefixIcon: Icon(LucideIcons.building2, size: 18, color: AppTheme.textSecondary),
+                      prefixIcon: Icon(LucideIcons.building2,
+                          size: 18, color: AppTheme.textSecondary),
                     ),
                     initialValue: company,
                     borderRadius: BorderRadius.circular(14),
                     items: companies
                         .map((c) => DropdownMenuItem(
                               value: c,
-                              child: Text(c, style: const TextStyle(fontWeight: FontWeight.w600)),
+                              child: Text(c,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w600)),
                             ))
                         .toList(),
                     onChanged: (v) => setState(() => company = v!),
@@ -87,13 +93,16 @@ class _AddMeterScreenState extends State<AddMeterScreen> {
                     decoration: const InputDecoration(
                       labelText: 'Reference Number',
                       hintText: '14-digit consumer number from bill',
-                      prefixIcon: Icon(LucideIcons.hash, size: 18, color: AppTheme.textSecondary),
+                      prefixIcon: Icon(LucideIcons.hash,
+                          size: 18, color: AppTheme.textSecondary),
                     ),
                     keyboardType: TextInputType.number,
                     validator: (v) {
-                      if (v == null || v.trim().isEmpty) return 'Reference number is required';
+                      if (v == null || v.trim().isEmpty)
+                        return 'Reference number is required';
                       final digitsOnly = v.replaceAll(RegExp(r'\D'), '');
-                      if (digitsOnly.length < 10) return 'Must contain at least 10 digits';
+                      if (digitsOnly.length < 10)
+                        return 'Must contain at least 10 digits';
                       return null;
                     },
                     onSaved: (v) => referenceNumber = v!.trim(),
@@ -107,8 +116,10 @@ class _AddMeterScreenState extends State<AddMeterScreen> {
                     decoration: const InputDecoration(
                       labelText: 'Billing Reading Day',
                       hintText: 'Day of month (1 – 28)',
-                      helperText: 'Date your meter reader usually visits each month',
-                      prefixIcon: Icon(LucideIcons.calendar, size: 18, color: AppTheme.textSecondary),
+                      helperText:
+                          'Date your meter reader usually visits each month',
+                      prefixIcon: Icon(LucideIcons.calendar,
+                          size: 18, color: AppTheme.textSecondary),
                     ),
                     keyboardType: TextInputType.number,
                     initialValue: '10',
@@ -126,8 +137,10 @@ class _AddMeterScreenState extends State<AddMeterScreen> {
                     decoration: const InputDecoration(
                       labelText: 'Monthly Unit Target (Optional)',
                       hintText: 'e.g. 200 or 300 units',
-                      helperText: 'Helps calculate daily pacing and budget alerts',
-                      prefixIcon: Icon(LucideIcons.target, size: 18, color: AppTheme.textSecondary),
+                      helperText:
+                          'Helps calculate daily pacing and budget alerts',
+                      prefixIcon: Icon(LucideIcons.target,
+                          size: 18, color: AppTheme.textSecondary),
                     ),
                     keyboardType: TextInputType.number,
                     onSaved: (v) => limit = int.tryParse(v?.trim() ?? ''),

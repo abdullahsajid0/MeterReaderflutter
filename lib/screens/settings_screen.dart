@@ -46,22 +46,26 @@ class SettingsScreen extends StatelessWidget {
               _buildGroupedCard(
                 children: [
                   ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                     leading: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         color: AppTheme.accentLight,
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(LucideIcons.building2, color: AppTheme.accent, size: 20),
+                      child: const Icon(LucideIcons.building2,
+                          color: AppTheme.accent, size: 20),
                     ),
                     title: const Text(
                       'Default Provider',
-                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                      style:
+                          TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                     ),
                     subtitle: const Text(
                       'Primary utility for new meters',
-                      style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                      style: TextStyle(
+                          fontSize: 12, color: AppTheme.textSecondary),
                     ),
                     trailing: DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
@@ -100,22 +104,26 @@ class SettingsScreen extends StatelessWidget {
               _buildGroupedCard(
                 children: [
                   SwitchListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                     secondary: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         color: AppTheme.successLight,
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(LucideIcons.bell, color: AppTheme.success, size: 20),
+                      child: const Icon(LucideIcons.bell,
+                          color: AppTheme.success, size: 20),
                     ),
                     title: const Text(
                       'Reading Reminders',
-                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                      style:
+                          TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                     ),
                     subtitle: const Text(
                       'Alerts before billing cycle ends',
-                      style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                      style: TextStyle(
+                          fontSize: 12, color: AppTheme.textSecondary),
                     ),
                     value: store.remindersEnabled,
                     activeThumbColor: AppTheme.accent,
@@ -138,14 +146,16 @@ class SettingsScreen extends StatelessWidget {
               _buildGroupedCard(
                 children: [
                   ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                     leading: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         color: AppTheme.dangerLight,
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(LucideIcons.trash2, color: AppTheme.danger, size: 20),
+                      child: const Icon(LucideIcons.trash2,
+                          color: AppTheme.danger, size: 20),
                     ),
                     title: const Text(
                       'Clear Reading History',
@@ -157,9 +167,11 @@ class SettingsScreen extends StatelessWidget {
                     ),
                     subtitle: const Text(
                       'Delete recorded scans while keeping meters',
-                      style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                      style: TextStyle(
+                          fontSize: 12, color: AppTheme.textSecondary),
                     ),
-                    trailing: const Icon(LucideIcons.chevronRight, size: 18, color: AppTheme.textMuted),
+                    trailing: const Icon(LucideIcons.chevronRight,
+                        size: 18, color: AppTheme.textMuted),
                     onTap: () => _confirmResetHistory(context, store),
                   ),
                 ],
@@ -178,13 +190,15 @@ class SettingsScreen extends StatelessWidget {
                         border: Border.all(color: AppTheme.border),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                            color:
+                                const Color(0xFF0F172A).withValues(alpha: 0.04),
                             blurRadius: 10,
                             offset: const Offset(0, 3),
                           ),
                         ],
                       ),
-                      child: const Icon(LucideIcons.gauge, size: 24, color: AppTheme.accent),
+                      child: const Icon(LucideIcons.gauge,
+                          size: 24, color: AppTheme.accent),
                     ),
                     const SizedBox(height: 12),
                     const Text(
@@ -198,7 +212,8 @@ class SettingsScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: AppTheme.accentLight,
                         borderRadius: BorderRadius.circular(8),

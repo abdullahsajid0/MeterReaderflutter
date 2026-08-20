@@ -4,25 +4,26 @@ import 'package:google_fonts/google_fonts.dart';
 class AppTheme {
   // Brand & Palette Tokens
   static const Color primary = Color(0xFF0F172A); // slate-900
-  static const Color background = Color(0xFFF8FAFC); // slate-50 (clean, bright canvas)
+  static const Color background =
+      Color(0xFFF8FAFC); // slate-50 (clean, bright canvas)
   static const Color surface = Colors.white;
   static const Color textPrimary = Color(0xFF0F172A); // slate-900
   static const Color textSecondary = Color(0xFF64748B); // slate-500
   static const Color textMuted = Color(0xFF94A3B8); // slate-400
-  
+
   static const Color accent = Color(0xFF2563EB); // blue-600 (vibrant energy)
   static const Color accentGradient = Color(0xFF3B82F6); // blue-500
   static const Color accentLight = Color(0xFFEFF6FF); // blue-50
-  
+
   static const Color success = Color(0xFF059669); // emerald-600
   static const Color successLight = Color(0xFFECFDF5); // emerald-50
-  
+
   static const Color warning = Color(0xFFD97706); // amber-600
   static const Color warningLight = Color(0xFFFFFBEB); // amber-50
-  
+
   static const Color danger = Color(0xFFDC2626); // red-600
   static const Color dangerLight = Color(0xFFFEF2F2); // red-50
-  
+
   static const Color border = Color(0xFFE2E8F0); // slate-200
   static const Color borderLight = Color(0xFFF1F5F9); // slate-100
 
@@ -135,8 +136,10 @@ class AppTheme {
         backgroundColor: surface,
         selectedItemColor: accent,
         unselectedItemColor: textMuted,
-        selectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 12),
-        unselectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.w500, fontSize: 12),
+        selectedLabelStyle:
+            GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 12),
+        unselectedLabelStyle:
+            GoogleFonts.inter(fontWeight: FontWeight.w500, fontSize: 12),
         elevation: 8,
         type: BottomNavigationBarType.fixed,
       ),
@@ -145,24 +148,29 @@ class AppTheme {
           backgroundColor: primary,
           foregroundColor: Colors.white,
           elevation: 0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          textStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15),
+          textStyle:
+              GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: textPrimary,
           side: const BorderSide(color: border, width: 1),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          textStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
+          textStyle:
+              GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: surface,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: border),

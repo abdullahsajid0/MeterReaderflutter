@@ -37,7 +37,7 @@ ParsedPitcBill? parsePitcBillHtml(String source) {
     'PREV. READING',
     'PREV'
   ]);
-  
+
   final current = _valueAfterLabels(text, [
     'PRESENT READING',
     'PRES READING',
@@ -48,12 +48,8 @@ ParsedPitcBill? parsePitcBillHtml(String source) {
     'PRES'
   ]);
 
-  final units = _valueAfterLabels(text, [
-    'UNITS BILLED',
-    'UNITS CONSUMED',
-    'TOTAL UNITS',
-    'UNITS'
-  ]);
+  final units = _valueAfterLabels(
+      text, ['UNITS BILLED', 'UNITS CONSUMED', 'TOTAL UNITS', 'UNITS']);
 
   // If text parsing fails, try table cell searching
   final cellValues = _extractTableData(document);
@@ -66,29 +62,28 @@ ParsedPitcBill? parsePitcBillHtml(String source) {
     return null;
   }
 
-  final readingDate = _dateAfterLabels(text, [
-    'READING DATE',
-    'READ DATE',
-    'DATE OF READING',
-    'MTR DATE'
-  ]) ?? cellValues['dateStr'];
+  final readingDate = _dateAfterLabels(
+          text, ['READING DATE', 'READ DATE', 'DATE OF READING', 'MTR DATE']) ??
+      cellValues['dateStr'];
 
   final now = DateTime.now();
   final defaultMonth = '${now.year}-${now.month.toString().padLeft(2, '0')}';
 
-  final billMonth = _monthAfterLabels(text, [
-    'BILL MONTH',
-    'BILLING MONTH',
-    'MONTH'
-  ]) ?? readingDate?.substring(0, 7) ?? defaultMonth;
+  final billMonth =
+      _monthAfterLabels(text, ['BILL MONTH', 'BILLING MONTH', 'MONTH']) ??
+          readingDate?.substring(0, 7) ??
+          defaultMonth;
 
   return ParsedPitcBill(
-    referenceNumber: _textAfterLabels(text, ['REFERENCE NO', 'REF NO', 'REFERENCE']),
-    consumerId: _textAfterLabels(text, ['CONSUMER ID', 'CONS ID', 'ACCOUNT NO']),
+    referenceNumber:
+        _textAfterLabels(text, ['REFERENCE NO', 'REF NO', 'REFERENCE']),
+    consumerId:
+        _textAfterLabels(text, ['CONSUMER ID', 'CONS ID', 'ACCOUNT NO']),
     billingMonth: billMonth,
     previousReading: finalPrevious,
     currentReading: finalCurrent,
-    readingDate: readingDate ?? DateTime.now().toIso8601String().substring(0, 10),
+    readingDate:
+        readingDate ?? DateTime.now().toIso8601String().substring(0, 10),
     unitsBilled: finalUnits,
     amountPkr: _valueAfterLabels(text, [
       'PAYABLE WITHIN DUE DATE',
@@ -110,19 +105,26 @@ Map<String, dynamic> _extractTableData(html_dom.Document document) {
     ];
     for (int i = 0; i < elements.length; i++) {
       final t = elements[i].text.trim().toUpperCase();
-      if ((t.contains('PREV') || t.contains('PREVIOUS')) && i + 1 < elements.length) {
+      if ((t.contains('PREV') || t.contains('PREVIOUS')) &&
+          i + 1 < elements.length) {
         final valText = elements[i + 1].text.replaceAll(',', '').trim();
-        final val = int.tryParse(RegExp(r'\d+').firstMatch(valText)?.group(0) ?? '');
+        final val =
+            int.tryParse(RegExp(r'\d+').firstMatch(valText)?.group(0) ?? '');
         if (val != null && val > 0) res['previous'] = val;
       }
-      if ((t.contains('PRES') || t.contains('PRESENT') || t.contains('CURRENT')) && i + 1 < elements.length) {
+      if ((t.contains('PRES') ||
+              t.contains('PRESENT') ||
+              t.contains('CURRENT')) &&
+          i + 1 < elements.length) {
         final valText = elements[i + 1].text.replaceAll(',', '').trim();
-        final val = int.tryParse(RegExp(r'\d+').firstMatch(valText)?.group(0) ?? '');
+        final val =
+            int.tryParse(RegExp(r'\d+').firstMatch(valText)?.group(0) ?? '');
         if (val != null && val > 0) res['current'] = val;
       }
       if (t.contains('UNITS') && i + 1 < elements.length) {
         final valText = elements[i + 1].text.replaceAll(',', '').trim();
-        final val = int.tryParse(RegExp(r'\d+').firstMatch(valText)?.group(0) ?? '');
+        final val =
+            int.tryParse(RegExp(r'\d+').firstMatch(valText)?.group(0) ?? '');
         if (val != null) res['units'] = val;
       }
     }
@@ -235,6 +237,8 @@ int? _monthNumber(String value) {
     'NOV': 11,
     'DEC': 12,
   };
-  final key = value.length >= 3 ? value.substring(0, 3).toUpperCase() : value.toUpperCase();
+  final key = value.length >= 3
+      ? value.substring(0, 3).toUpperCase()
+      : value.toUpperCase();
   return names[key];
 }

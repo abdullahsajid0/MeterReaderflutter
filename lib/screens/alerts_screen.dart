@@ -64,20 +64,23 @@ class AlertsScreen extends StatelessWidget {
                             color: AppTheme.success.withValues(alpha: 0.08),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(LucideIcons.checkCheck, size: 44, color: AppTheme.success),
+                          child: const Icon(LucideIcons.checkCheck,
+                              size: 44, color: AppTheme.success),
                         ),
                         const SizedBox(height: 20),
                         Text(
                           'No notifications',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
+                          style:
+                              Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
                         ),
                         const SizedBox(height: 8),
                         const Text(
                           'All monitored meters are operating within normal billing limits.',
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: AppTheme.textSecondary, height: 1.45),
+                          style: TextStyle(
+                              color: AppTheme.textSecondary, height: 1.45),
                         ),
                       ],
                     ),
@@ -96,7 +99,8 @@ class AlertsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildNotificationCard(BuildContext context, Alert alert, WattWiseStore store) {
+  Widget _buildNotificationCard(
+      BuildContext context, Alert alert, WattWiseStore store) {
     Color accentColor;
     IconData icon;
     Color iconBg;
@@ -127,7 +131,8 @@ class AlertsScreen extends StatelessWidget {
 
     return Dismissible(
       key: Key(alert.key),
-      direction: DismissDirection.horizontal, // Swipe left-to-right or right-to-left
+      direction:
+          DismissDirection.horizontal, // Swipe left-to-right or right-to-left
       onDismissed: (_) {
         store.dismissAlert(alert.key);
         AppToast.show(
@@ -208,7 +213,8 @@ class AlertsScreen extends StatelessWidget {
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 7, vertical: 2),
                           decoration: BoxDecoration(
                             color: AppTheme.background,
                             borderRadius: BorderRadius.circular(6),
@@ -237,18 +243,21 @@ class AlertsScreen extends StatelessWidget {
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        const Icon(LucideIcons.clock, size: 12, color: AppTheme.textMuted),
+                        const Icon(LucideIcons.clock,
+                            size: 12, color: AppTheme.textMuted),
                         const SizedBox(width: 4),
                         Text(
                           DateFormat('d MMM · h:mm a').format(DateTime.now()),
-                          style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                          style: const TextStyle(
+                              fontSize: 11, color: AppTheme.textMuted),
                         ),
                         const Spacer(),
                         InkWell(
                           borderRadius: BorderRadius.circular(8),
                           onTap: () => store.dismissAlert(alert.key),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
                               color: AppTheme.background,
                               borderRadius: BorderRadius.circular(8),
@@ -257,7 +266,8 @@ class AlertsScreen extends StatelessWidget {
                             child: const Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(LucideIcons.check, size: 13, color: AppTheme.textSecondary),
+                                Icon(LucideIcons.check,
+                                    size: 13, color: AppTheme.textSecondary),
                                 SizedBox(width: 4),
                                 Text(
                                   'Dismiss',
