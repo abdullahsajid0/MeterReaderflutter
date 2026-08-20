@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import '../store/wattwise_store.dart';
 import '../theme/app_theme.dart';
-import '../services/wattwise_billing.dart';
 import '../models/wattwise_types.dart';
 
 class InsightsScreen extends StatelessWidget {
