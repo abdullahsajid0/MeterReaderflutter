@@ -43,3 +43,17 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Environment & Secrets
+.env*
+key.properties
+*.keystore
+*.jks
+google-services.json
+GoogleService-Info.plist
+
+# Agent & IDE workspace metadata
+.agents/
+.gemini/
+skills-lock.json
+
