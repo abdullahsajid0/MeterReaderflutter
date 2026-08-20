@@ -265,7 +265,7 @@ class _MeterScanScreenState extends State<MeterScanScreen> {
               onPressed: current < previous
                   ? null
                   : () {
-                      final cycle = cycleFor(meter);
+                      final cycle = store.cycleForMeter(meter);
                       store.addReading(
                         meterId: meter.id,
                         currentReading: current,

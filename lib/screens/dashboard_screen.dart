@@ -128,7 +128,7 @@ class _TactileMeterCardState extends State<_TactileMeterCard> {
   Widget build(BuildContext context) {
     final m = widget.meter;
     final used = widget.store.unitsThisCycle(m);
-    final cycle = cycleFor(m);
+    final cycle = widget.store.cycleForMeter(m);
 
     final daysElapsed = cycle.daysElapsed;
     final remainingDays = cycle.daysRemaining;

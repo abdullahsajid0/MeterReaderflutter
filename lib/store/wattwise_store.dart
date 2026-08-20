@@ -210,10 +210,46 @@ class WattWiseStore extends ChangeNotifier {
     ];
     _persistBills();
 
-    // Reset readings for this meter's current billing cycle
-    // since the official bill has arrived
-    readings = readings.where((r) =>
-        !(r.meterId == bill.meterId && r.billingMonth == bill.billingMonth)).toList();
+    final billDate = DateTime.tryParse(bill.readingDate);
+
+    // Settle readings:
+    // - Remove readings scanned on or before the official reading date (they are now settled by official bill)
+    // - Preserve any readings scanned AFTER the official reading date, transitioning them to the new cycle with the new baseline
+    List<Reading> updatedReadings = [];
+    for (var r in readings) {
+      if (r.meterId != bill.meterId) {
+        updatedReadings.add(r);
+        continue;
+      }
+      final scanDate = DateTime.tryParse(r.scannedAt);
+      if (billDate != null &&
+          scanDate != null &&
+          scanDate.isAfter(billDate.add(const Duration(hours: 18)))) {
+        // This scan was taken after the meter reader visited, so it belongs to the new cycle
+        final newUnits =
+            (r.currentReading - bill.currentReading).clamp(0, 999999);
+        updatedReadings.add(Reading(
+          id: r.id,
+          meterId: r.meterId,
+          currentReading: r.currentReading,
+          scannedAt: r.scannedAt,
+          previousReading: bill.currentReading,
+          cycleStart: bill.readingDate,
+          cycleEnd: bill.nextReadingDate,
+          unitsConsumed: newUnits,
+          source: r.source,
+          billingMonth: bill.nextReadingDate.isNotEmpty
+              ? bill.nextReadingDate.substring(0, 7)
+              : r.billingMonth,
+        ));
+      } else if (r.billingMonth != bill.billingMonth &&
+          (billDate == null ||
+              scanDate == null ||
+              scanDate.isAfter(billDate))) {
+        updatedReadings.add(r);
+      }
+    }
+    readings = updatedReadings;
     _persistReadings();
 
     meters = meters
@@ -256,13 +292,38 @@ class WattWiseStore extends ChangeNotifier {
     return filtered;
   }
 
+  Cycle cycleForMeter(Meter meter, [DateTime? on]) {
+    return cycleFor(meter, latestBill: billFor(meter.id), on: on);
+  }
+
   Reading? currentCycleReading(Meter meter) {
-    final cycle = cycleFor(meter);
-    var filtered = readingsForMeter(meter.id);
+    final cycle = cycleForMeter(meter);
+    final bill = billFor(meter.id);
+    final meterReadings = readingsForMeter(meter.id);
+    if (meterReadings.isEmpty) return null;
+
+    if (bill != null && bill.readingDate.isNotEmpty) {
+      final billDate = DateTime.tryParse(bill.readingDate);
+      if (billDate != null) {
+        final valid = meterReadings.where((r) {
+          final dt = DateTime.tryParse(r.scannedAt);
+          return dt != null &&
+              !dt.isBefore(billDate.subtract(const Duration(hours: 12)));
+        }).toList();
+        return valid.isNotEmpty ? valid.first : null;
+      }
+    }
+
     try {
-      return filtered.firstWhere((r) => r.cycleEnd == cycle.endISO);
+      return meterReadings.firstWhere((r) {
+        final dt = DateTime.tryParse(r.scannedAt);
+        if (dt != null) {
+          return !dt.isBefore(cycle.start.subtract(const Duration(hours: 12)));
+        }
+        return r.cycleEnd == cycle.endISO || r.billingMonth == cycle.billingMonth;
+      });
     } catch (_) {
-      return null;
+      return meterReadings.isNotEmpty ? meterReadings.first : null;
     }
   }
 
@@ -272,7 +333,13 @@ class WattWiseStore extends ChangeNotifier {
   }
 
   int unitsThisCycle(Meter meter) {
-    return currentCycleReading(meter)?.unitsConsumed ?? 0;
+    final cur = currentCycleReading(meter);
+    if (cur == null) return 0;
+    final bill = billFor(meter.id);
+    if (bill != null && bill.currentReading > 0) {
+      return (cur.currentReading - bill.currentReading).clamp(0, 999999);
+    }
+    return cur.unitsConsumed;
   }
 
   BillInfo? billFor(String meterId) {
@@ -286,12 +353,21 @@ class WattWiseStore extends ChangeNotifier {
     final today = DateTime.now();
 
     for (var m in meters) {
-      final cycle = cycleFor(m, today);
+      final cycle = cycleForMeter(m, today);
       final cur = currentCycleReading(m);
-      final used = cur?.unitsConsumed ?? 0;
+      final used = unitsThisCycle(m);
       final daysToRead = daysBetween(today, cycle.end);
 
-      if (cur == null) {
+      if (cycle.isPendingOfficialBill) {
+        out.add(Alert(
+            key: 'pendingbill:${m.id}:${cycle.endISO}',
+            meterId: m.id,
+            meterName: m.nickname,
+            tone: 'info',
+            title: 'Official bill pending',
+            body:
+                '${m.company} read ${m.nickname} on ${DateFormat('d MMM').format(cycle.end)}. Fetch your new bill when released.'));
+      } else if (cur == null) {
         out.add(Alert(
             key: 'scan:${m.id}:${cycle.endISO}',
             meterId: m.id,
@@ -302,7 +378,7 @@ class WattWiseStore extends ChangeNotifier {
                 'Record a reading for ${m.nickname} — the cycle ends ${DateFormat('d MMM').format(cycle.end)}.'));
       }
 
-      if (daysToRead <= 3 && daysToRead >= 0) {
+      if (!cycle.isPendingOfficialBill && daysToRead <= 3 && daysToRead >= 0) {
         out.add(Alert(
             key: 'readday:${m.id}:${cycle.endISO}',
             meterId: m.id,

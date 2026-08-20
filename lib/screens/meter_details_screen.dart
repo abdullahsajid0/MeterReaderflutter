@@ -41,17 +41,21 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
         }
         final meter = meterMatches.first;
         final readings = store.readingsForMeter(meter.id);
-        final cycle = cycleFor(meter);
+        final cycle = store.cycleForMeter(meter);
         final used = store.unitsThisCycle(meter);
         final stats = analytics(readings);
-        final dailyPoints = computeDailyCycleUsage(readings, cycle);
+        final dailyPoints = computeDailyCycleUsage(readings, cycle, latestBill: store.billFor(meter.id));
 
-        // Filter readings for the current cycle
+        // Filter readings for the current cycle (all readings taken since the last bill / cycle start)
+        final bill = store.billFor(meter.id);
+        final billDate = bill != null ? DateTime.tryParse(bill.readingDate) : null;
         final cycleReadings = readings.where((r) {
           final dt = DateTime.tryParse(r.scannedAt);
           if (dt != null) {
-            return !dt.isBefore(cycle.start.subtract(const Duration(hours: 12))) &&
-                   !dt.isAfter(cycle.end.add(const Duration(hours: 24)));
+            if (billDate != null) {
+              return !dt.isBefore(billDate.subtract(const Duration(hours: 12)));
+            }
+            return !dt.isBefore(cycle.start.subtract(const Duration(hours: 12)));
           }
           return r.billingMonth == cycle.billingMonth;
         }).toList();
@@ -192,9 +196,11 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
       int targetPerDay = remainingDays > 0 ? (remaining / remainingDays).round() : 0;
       int avgPerDay = daysElapsed > 0 ? (used / daysElapsed).round() : 0;
 
-      title = 'Daily Target';
-      value = '~$targetPerDay units/day';
-      subtitle = 'Averaging ~$avgPerDay units/day · $remaining units left in $remainingDays days';
+      title = cycle.isPendingOfficialBill ? 'Cycle Pacing' : 'Daily Target';
+      value = cycle.isPendingOfficialBill ? '~$avgPerDay units/day' : '~$targetPerDay units/day';
+      subtitle = cycle.isPendingOfficialBill
+          ? '$used units used over $daysElapsed days · Limit was ${m.monthlyLimit} units'
+          : 'Averaging ~$avgPerDay units/day · $remaining units left in $remainingDays days';
       icon = LucideIcons.target;
       accentColor = remaining > 0 ? AppTheme.success : AppTheme.danger;
       bgColor = remaining > 0 ? AppTheme.successLight : AppTheme.dangerLight;

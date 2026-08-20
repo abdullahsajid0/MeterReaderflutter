@@ -85,11 +85,44 @@ class BillingCycleCard extends StatelessWidget {
             style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
           ),
           const SizedBox(height: 16),
+          if (cycle.isPendingOfficialBill) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                color: AppTheme.warning.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppTheme.warning.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(LucideIcons.clock, size: 16, color: AppTheme.warning),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Reading taken around ${DateFormat('d MMM').format(cycle.end)}. Official bill typically takes 4–5 days to be published.',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF92400E),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           Row(
             children: [
               _Metric(label: 'Elapsed', value: '${cycle.daysElapsed} days'),
-              _Metric(label: 'Remaining', value: '${cycle.daysRemaining} days'),
-              _Metric(label: 'Next Reading', value: DateFormat('d MMM').format(cycle.end)),
+              _Metric(
+                label: 'Remaining',
+                value: cycle.isPendingOfficialBill ? 'Bill pending' : '${cycle.daysRemaining} days',
+              ),
+              _Metric(
+                label: 'Reading Date',
+                value: DateFormat('d MMM').format(cycle.end),
+              ),
             ],
           ),
           const SizedBox(height: 14),
@@ -99,18 +132,28 @@ class BillingCycleCard extends StatelessWidget {
               minHeight: 6,
               value: (cycle.progressPct / 100).clamp(0.0, 1.0),
               backgroundColor: AppTheme.borderLight,
-              valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.accent),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                cycle.isPendingOfficialBill ? AppTheme.warning : AppTheme.accent,
+              ),
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            '${cycle.progressPct}% elapsed this cycle',
+            cycle.isPendingOfficialBill
+                ? 'Cycle complete · Awaiting official bill sync'
+                : '${cycle.progressPct}% elapsed this cycle',
             style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
           ),
           const SizedBox(height: 14),
           SizedBox(
             width: double.infinity,
-            child: OutlinedButton.icon(
+            child: ElevatedButton.icon(
+              style: cycle.isPendingOfficialBill
+                  ? ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.accent,
+                      foregroundColor: Colors.white,
+                    )
+                  : null,
               onPressed: onFetchBill,
               icon: const Icon(LucideIcons.refreshCw, size: 15),
               label: Text(bill == null ? 'Fetch Official Bill' : 'Refresh Official Bill'),

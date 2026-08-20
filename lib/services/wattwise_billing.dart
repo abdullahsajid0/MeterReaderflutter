@@ -30,6 +30,7 @@ class Cycle {
   final int daysElapsed;
   final int daysRemaining;
   final int progressPct;
+  final bool isPendingOfficialBill;
 
   Cycle({
     required this.start,
@@ -41,52 +42,95 @@ class Cycle {
     required this.daysElapsed,
     required this.daysRemaining,
     required this.progressPct,
+    this.isPendingOfficialBill = false,
   });
 }
 
-Cycle cycleFor(Meter meter, [DateTime? on]) {
+Cycle cycleFor(Meter meter, {BillInfo? latestBill, DateTime? on}) {
   on ??= DateTime.now();
   final day = (meter.readingDay < 1
       ? 1
       : (meter.readingDay > 28 ? 28 : meter.readingDay));
-  // dart months are 1..12, monthIndex in JS was 0..11
-  // let's just use dart months
-  int currentMonth = on.month;
-  int currentYear = on.year;
 
-  DateTime end = clampDayDart(currentYear, currentMonth, day);
-  if (on.isAfter(end)) {
-    end = clampDayDart(currentYear, currentMonth + 1, day);
+  DateTime start;
+  DateTime end;
+  String billingMonth;
+
+  if (latestBill != null && latestBill.readingDate.isNotEmpty) {
+    // Cycle starts from the latest official bill's reading date
+    DateTime billReadingDate = parseISODate(latestBill.readingDate);
+    start = billReadingDate;
+
+    // Determine the expected next reading date
+    DateTime? expectedEnd;
+    if (latestBill.nextReadingDate.isNotEmpty) {
+      try {
+        final parsedNext = parseISODate(latestBill.nextReadingDate);
+        if (parsedNext.isAfter(start)) {
+          expectedEnd = parsedNext;
+        }
+      } catch (_) {}
+    }
+
+    if (expectedEnd == null) {
+      int nextMonth = start.month + 1;
+      int nextYear = start.year;
+      if (nextMonth > 12) {
+        nextMonth = 1;
+        nextYear++;
+      }
+      expectedEnd = clampDayDart(nextYear, nextMonth, day);
+    }
+
+    end = expectedEnd;
+    billingMonth = toISODate(end).substring(0, 7);
+  } else {
+    // No official bill available yet: fallback to monthly reading day schedule
+    int currentMonth = on.month;
+    int currentYear = on.year;
+
+    end = clampDayDart(currentYear, currentMonth, day);
+    DateTime prevEnd = clampDayDart(end.year, end.month - 1, day);
+    start = prevEnd;
+    billingMonth = toISODate(end).substring(0, 7);
   }
-  DateTime prevEnd = clampDayDart(end.year, end.month - 1, day);
-  DateTime start = prevEnd.add(const Duration(days: 1));
 
+  // Next reading date override if configured
   final overrideText = meter.nextReadingDateOverride;
   if (overrideText != null && overrideText.isNotEmpty) {
-    final override = parseISODate(overrideText);
-    if (!override.isBefore(start) &&
-        !override.isBefore(on) &&
-        daysBetween(end, override) < 45) {
-      end = override;
-    }
+    try {
+      final override = parseISODate(overrideText);
+      if (!override.isBefore(start) && daysBetween(start, override) < 60) {
+        end = override;
+        billingMonth = toISODate(end).substring(0, 7);
+      }
+    } catch (_) {}
   }
 
-  int lengthDays = daysBetween(start, end) + 1;
+  int lengthDays = daysBetween(start, end);
   if (lengthDays < 1) lengthDays = 1;
-  int elapsed = daysBetween(start, on) + 1;
+
+  final isPendingOfficialBill = on.isAfter(end);
+  int elapsed = daysBetween(start, on);
   if (elapsed < 0) elapsed = 0;
-  if (elapsed > lengthDays) elapsed = lengthDays;
+
+  int remaining = daysBetween(on, end);
+  if (remaining < 0) remaining = 0;
+
+  int progressPct = lengthDays > 0 ? ((elapsed / lengthDays) * 100).round() : 0;
+  if (progressPct > 100) progressPct = 100;
 
   return Cycle(
     start: start,
     end: end,
     startISO: toISODate(start),
     endISO: toISODate(end),
-    billingMonth: toISODate(end).substring(0, 7),
+    billingMonth: billingMonth,
     lengthDays: lengthDays,
     daysElapsed: elapsed,
-    daysRemaining: (lengthDays - elapsed) < 0 ? 0 : (lengthDays - elapsed),
-    progressPct: ((elapsed / lengthDays) * 100).round(),
+    daysRemaining: remaining,
+    progressPct: progressPct,
+    isPendingOfficialBill: isPendingOfficialBill,
   );
 }
 
@@ -117,7 +161,8 @@ class Projection {
 
 Projection project(int used, Cycle cycle, int? limit) {
   double dailyAvg = used / (cycle.daysElapsed > 0 ? cycle.daysElapsed : 1);
-  int projected = (dailyAvg * cycle.lengthDays).round();
+  int totalProjectedDays = cycle.daysElapsed > cycle.lengthDays ? cycle.daysElapsed : cycle.lengthDays;
+  int projected = (dailyAvg * totalProjectedDays).round();
   double? recommendedDaily;
   if (limit != null && limit > 0) {
     recommendedDaily =
@@ -206,12 +251,18 @@ class DailyUsagePoint {
   });
 }
 
-List<DailyUsagePoint> computeDailyCycleUsage(List<Reading> readings, Cycle cycle) {
-  if (readings.isEmpty) return [];
+List<DailyUsagePoint> computeDailyCycleUsage(
+  List<Reading> readings,
+  Cycle cycle, {
+  BillInfo? latestBill,
+}) {
+  if (readings.isEmpty && latestBill == null) return [];
 
   // Sort readings oldest-to-newest
   final sorted = [...readings];
   sorted.sort((a, b) => a.scannedAt.compareTo(b.scannedAt));
+
+  final baselineReading = latestBill?.currentReading;
 
   // 1. Group readings by 24-hour calendar day (yyyy-MM-dd)
   Map<String, List<Reading>> dayGroups = {};
@@ -233,13 +284,14 @@ List<DailyUsagePoint> computeDailyCycleUsage(List<Reading> readings, Cycle cycle
     final dayReadings = dayGroups[key]!;
     final earliest = dayReadings.first;
     final latest = dayReadings.last;
+    final base = baselineReading ?? earliest.previousReading;
     if (dayReadings.length > 1) {
       dayUnits[key] = (latest.currentReading - earliest.previousReading).clamp(0, 999999).toDouble();
     } else {
-      dayUnits[key] = latest.unitsConsumed.toDouble();
+      dayUnits[key] = (latest.currentReading - base).clamp(0, 999999).toDouble();
     }
     dayLatestReading[key] = latest.currentReading;
-  } else {
+  } else if (dayKeys.isNotEmpty) {
     for (int i = 0; i < dayKeys.length; i++) {
       final currKey = dayKeys[i];
       final currReadings = dayGroups[currKey]!;
@@ -248,7 +300,8 @@ List<DailyUsagePoint> computeDailyCycleUsage(List<Reading> readings, Cycle cycle
 
       if (i == 0) {
         final earliest = currReadings.first;
-        final totalDayDelta = (latest.currentReading - earliest.previousReading).clamp(0, 999999);
+        final base = baselineReading ?? earliest.previousReading;
+        final totalDayDelta = (latest.currentReading - base).clamp(0, 999999);
         dayUnits[currKey] = totalDayDelta.toDouble();
       } else {
         final prevKey = dayKeys[i - 1];
@@ -273,11 +326,12 @@ List<DailyUsagePoint> computeDailyCycleUsage(List<Reading> readings, Cycle cycle
   }
 
   final today = DateTime.now();
-  final lastDate = today.isBefore(cycle.end) ? today : cycle.end;
+  // Include dates through today (even if waiting past expected cycle end for official bill)
+  final lastDate = today.isAfter(cycle.end) ? today : cycle.end;
   final totalDays = daysBetween(cycle.start, lastDate) + 1;
 
   List<DailyUsagePoint> points = [];
-  for (int i = 0; i < totalDays && i < 35; i++) {
+  for (int i = 0; i < totalDays && i < 45; i++) {
     final d = cycle.start.add(Duration(days: i));
     final key = toISODate(d);
     final val = dayUnits[key] ?? 0.0;

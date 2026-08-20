@@ -63,7 +63,7 @@ class InsightsScreen extends StatelessWidget {
 
         for (var m in meters) {
           final used = store.unitsThisCycle(m);
-          final cycle = cycleFor(m);
+          final cycle = store.cycleForMeter(m);
           totalUnitsThisCycle += used;
           if (m.monthlyLimit != null && m.monthlyLimit! > 0) {
             totalLimitThisCycle += m.monthlyLimit!;
@@ -454,7 +454,7 @@ class InsightsScreen extends StatelessWidget {
 
   Widget _buildMeterInsightCard(BuildContext context, Meter m, WattWiseStore store) {
     final used = store.unitsThisCycle(m);
-    final cycle = cycleFor(m);
+    final cycle = store.cycleForMeter(m);
     
     final daysElapsed = cycle.daysElapsed;
     final remainingDays = cycle.daysRemaining;
