@@ -9,11 +9,18 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/abdullahsajid0/MeterReaderflutter/releases/latest"><img src="https://img.shields.io/github/v/release/abdullahsajid0/MeterReaderflutter?style=flat-square&color=2563eb&label=Latest%20Release" alt="Latest Release" /></a>
   <a href="https://flutter.dev"><img src="https://img.shields.io/badge/Flutter-3.x-02569B?style=flat-square&logo=flutter&logoColor=white" alt="Flutter" /></a>
   <a href="https://dart.dev"><img src="https://img.shields.io/badge/Dart-3.x-0175C2?style=flat-square&logo=dart&logoColor=white" alt="Dart" /></a>
   <a href="https://developers.google.com/ml-kit"><img src="https://img.shields.io/badge/ML%20Kit-Vision%20OCR-4285F4?style=flat-square&logo=google&logoColor=white" alt="ML Kit" /></a>
   <a href="#license"><img src="https://img.shields.io/badge/License-PolyForm%20Noncommercial-blue?style=flat-square" alt="License" /></a>
 </p>
+
+---
+
+## Download
+
+Get the latest stable Android build (`.apk`) directly from the [Releases page](https://github.com/abdullahsajid0/MeterReaderflutter/releases/latest).
 
 ---
 
