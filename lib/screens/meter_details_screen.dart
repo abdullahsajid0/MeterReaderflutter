@@ -642,8 +642,9 @@ class _MeterDetailsScreenState extends State<MeterDetailsScreen> {
                                 : (points.length / 5).clamp(1, 10).toDouble(),
                             getTitlesWidget: (value, meta) {
                               final idx = value.toInt();
-                              if (idx < 0 || idx >= points.length)
+                              if (idx < 0 || idx >= points.length) {
                                 return const SizedBox();
+                              }
                               final p = points[idx];
                               return Padding(
                                 padding: const EdgeInsets.only(top: 8.0),

@@ -98,11 +98,13 @@ class _AddMeterScreenState extends State<AddMeterScreen> {
                     ),
                     keyboardType: TextInputType.number,
                     validator: (v) {
-                      if (v == null || v.trim().isEmpty)
+                      if (v == null || v.trim().isEmpty) {
                         return 'Reference number is required';
+                      }
                       final digitsOnly = v.replaceAll(RegExp(r'\D'), '');
-                      if (digitsOnly.length < 10)
+                      if (digitsOnly.length < 10) {
                         return 'Must contain at least 10 digits';
+                      }
                       return null;
                     },
                     onSaved: (v) => referenceNumber = v!.trim(),
