@@ -22,7 +22,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('No meters yet'), findsOneWidget);
+    expect(find.text('No meters added'), findsOneWidget);
     expect(find.text('Add Meter'), findsOneWidget);
   });
 }
